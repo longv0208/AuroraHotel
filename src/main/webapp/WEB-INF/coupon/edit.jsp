@@ -29,7 +29,7 @@
                 </div>
                 <div class="card-body">
                     <form method="post" action="${pageContext.request.contextPath}/coupon">
-                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="action" value="edit">
                         <input type="hidden" name="id" value="${coupon.couponID}">
 
                         <div class="row mb-3">
@@ -39,7 +39,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Tên coupon</label>
-                                <input type="text" name="couponName" class="form-control" value="${coupon.couponName}">
+                                <input type="text" name="couponName" class="form-control" value="${coupon.description}">
                             </div>
                         </div>
 
@@ -49,7 +49,7 @@
                                 <select name="discountType" class="form-select" required onchange="toggleDiscountFields()">
                                     <option value="">Chọn loại</option>
                                     <option value="Percent" ${coupon.discountType == 'Percent' ? 'selected' : ''}>Phần trăm (%)</option>
-                                    <option value="Fixed" ${coupon.discountType == 'Fixed' ? 'selected' : ''}>Số tiền cố định (₫)</option>
+                                    <option value="FixedAmount" ${coupon.discountType == 'FixedAmount' ? 'selected' : ''}>Số tiền cố định (₫)</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -61,11 +61,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Hiệu lực từ <span class="text-danger">*</span></label>
-                                <input type="date" name="validFrom" class="form-control" value="${coupon.validFrom}" required>
+                                <input type="date" name="validFrom" class="form-control" value="${coupon.startDate}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Hết hạn <span class="text-danger">*</span></label>
-                                <input type="date" name="validTo" class="form-control" value="${coupon.validTo}" required>
+                                <input type="date" name="validTo" class="form-control" value="${coupon.endDate}" required>
                             </div>
                         </div>
 
@@ -87,7 +87,7 @@
 
                         <div class="mb-3">
                             <div class="form-check">
-                                <input type="checkbox" name="isActive" class="form-check-input" ${coupon.isActive ? 'checked' : ''}>
+                                <input type="checkbox" name="isActive" class="form-check-input" ${coupon.active ? 'checked' : ''}>
                                 <label class="form-check-label">Kích hoạt</label>
                             </div>
                         </div>
@@ -113,13 +113,13 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-3">
-                        <h3 class="text-primary">${coupon.usageCount}</h3>
+                        <h3 class="text-primary">${coupon.usedCount}</h3>
                         <p class="text-muted mb-0">Số lần sử dụng</p>
                     </div>
                     
                     <div class="text-center">
                         <small class="text-muted">
-                            Tạo ngày: <fmt:formatDate value="${coupon.createdDate}" pattern="dd/MM/yyyy"/>
+                            Tạo ngày: ${coupon.createdDate}
                         </small>
                     </div>
                 </div>
@@ -153,7 +153,7 @@ function toggleDiscountFields() {
         maxDiscountField.style.display = 'block';
         discountValueInput.placeholder = 'VD: 20 (cho 20%)';
         discountValueInput.max = 100;
-    } else if (discountType === 'Fixed') {
+    } else if (discountType === 'FixedAmount') {
         maxDiscountField.style.display = 'none';
         discountValueInput.placeholder = 'VD: 100000 (cho 100,000₫)';
         discountValueInput.removeAttribute('max');

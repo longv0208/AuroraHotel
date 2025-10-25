@@ -47,7 +47,7 @@
                                 <select name="discountType" class="form-select" required onchange="toggleDiscountFields()">
                                     <option value="">Chọn loại</option>
                                     <option value="Percent">Phần trăm (%)</option>
-                                    <option value="Fixed">Số tiền cố định (₫)</option>
+                                    <option value="FixedAmount">Số tiền cố định (₫)</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -152,7 +152,7 @@ function toggleDiscountFields() {
         maxDiscountField.style.display = 'block';
         discountValueInput.placeholder = 'VD: 20 (cho 20%)';
         discountValueInput.max = 100;
-    } else if (discountType === 'Fixed') {
+    } else if (discountType === 'FixedAmount') {
         maxDiscountField.style.display = 'none';
         discountValueInput.placeholder = 'VD: 100000 (cho 100,000₫)';
         discountValueInput.removeAttribute('max');

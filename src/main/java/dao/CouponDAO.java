@@ -33,7 +33,7 @@ public class CouponDAO extends DBContext {
         
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, coupon.getCouponCode().toUpperCase());
-            ps.setString(2, coupon.getDescription());
+            ps.setString(2, coupon.getDescription() != null ? coupon.getDescription() : "");
             ps.setString(3, coupon.getDiscountType());
             ps.setBigDecimal(4, coupon.getDiscountValue());
             
@@ -256,6 +256,7 @@ public class CouponDAO extends DBContext {
         int offset = (page - 1) * RECORDS_PER_PAGE;
         
         String sql = "SELECT * FROM Coupons " +
+                     "WHERE IsActive = 1 " +
                      "ORDER BY CreatedDate DESC " +
                      "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         
@@ -291,7 +292,7 @@ public class CouponDAO extends DBContext {
         
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setString(1, coupon.getCouponCode().toUpperCase());
-            ps.setString(2, coupon.getDescription());
+            ps.setString(2, coupon.getDescription() != null ? coupon.getDescription() : "");
             ps.setString(3, coupon.getDiscountType());
             ps.setBigDecimal(4, coupon.getDiscountValue());
             
@@ -387,26 +388,8 @@ public class CouponDAO extends DBContext {
      * @return true if deletion successful, false otherwise
      */
     public boolean deleteCoupon(int couponID) {
-        // Check if coupon has been used
-        String checkSQL = "SELECT UsedCount FROM Coupons WHERE CouponID = ?";
-        
-        try (PreparedStatement checkPS = this.getConnection().prepareStatement(checkSQL)) {
-            checkPS.setInt(1, couponID);
-            
-            try (ResultSet rs = checkPS.executeQuery()) {
-                if (rs.next() && rs.getInt("UsedCount") > 0) {
-                    System.err.println("Cannot delete coupon that has been used");
-                    return false;
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Error checking coupon usage: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-        
-        // Delete coupon
-        String sql = "DELETE FROM Coupons WHERE CouponID = ?";
+        // Soft delete - set IsActive to false instead of deleting
+        String sql = "UPDATE Coupons SET IsActive = 0 WHERE CouponID = ?";
         
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setInt(1, couponID);
@@ -415,7 +398,7 @@ public class CouponDAO extends DBContext {
             return rowsAffected > 0;
             
         } catch (SQLException e) {
-            System.err.println("Error deleting coupon: " + e.getMessage());
+            System.err.println("Error deactivating coupon: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -427,7 +410,7 @@ public class CouponDAO extends DBContext {
      * @return Total count of coupons
      */
     public int getTotalRows() {
-        String sql = "SELECT COUNT(*) FROM Coupons";
+        String sql = "SELECT COUNT(*) FROM Coupons WHERE IsActive = 1";
         
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

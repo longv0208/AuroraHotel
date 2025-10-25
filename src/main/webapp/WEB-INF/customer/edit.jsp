@@ -114,7 +114,7 @@
                     
                     <div class="text-center">
                         <small class="text-muted">
-                            Tham gia từ: <fmt:formatDate value="${customer.createdDate}" pattern="dd/MM/yyyy"/>
+                            Tham gia từ: ${customer.createdDate}
                         </small>
                     </div>
                 </div>

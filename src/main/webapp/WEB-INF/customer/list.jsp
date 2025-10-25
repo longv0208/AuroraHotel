@@ -130,7 +130,7 @@
                                             <span class="badge bg-primary">${customer.totalBookings}</span>
                                         </td>
                                         <td>
-                                            <fmt:formatDate value="${customer.createdDate}" pattern="dd/MM/yyyy"/>
+                                            ${customer.createdDate}
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">

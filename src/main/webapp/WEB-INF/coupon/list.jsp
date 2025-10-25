@@ -43,7 +43,7 @@
                                                 <h5 class="card-title mb-1">
                                                     ${coupon.couponCode}
                                                     <c:choose>
-                                                        <c:when test="${coupon.isActive}">
+                                                        <c:when test="${coupon.active}">
                                                             <span class="badge bg-success ms-2">Hoạt động</span>
                                                         </c:when>
                                                         <c:otherwise>
@@ -52,7 +52,7 @@
                                                     </c:choose>
                                                 </h5>
                                                 <p class="text-muted small mb-0">
-                                                    Tạo ngày: <fmt:formatDate value="${coupon.createdDate}" pattern="dd/MM/yyyy"/>
+                                                    Tạo ngày: ${coupon.createdDate}
                                                 </p>
                                             </div>
                                         </div>
@@ -80,19 +80,19 @@
                                             <div class="col-md-6">
                                                 <i class="fas fa-calendar text-info me-2"></i>
                                                 <strong>Hiệu lực từ:</strong>
-                                                <fmt:formatDate value="${coupon.validFrom}" pattern="dd/MM/yyyy"/>
+                                                ${coupon.startDate}
                                             </div>
                                             <div class="col-md-6">
                                                 <i class="fas fa-calendar-times text-danger me-2"></i>
                                                 <strong>Hết hạn:</strong>
-                                                <fmt:formatDate value="${coupon.validTo}" pattern="dd/MM/yyyy"/>
+                                                ${coupon.endDate}
                                             </div>
                                         </div>
 
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <i class="fas fa-users text-warning me-2"></i>
-                                                <strong>Số lần sử dụng:</strong> ${coupon.usageCount}/${coupon.usageLimit}
+                                                <strong>Số lần sử dụng:</strong> ${coupon.usedCount}/${coupon.usageLimit}
                                             </div>
                                             <div class="col-md-6">
                                                 <i class="fas fa-money-bill text-success me-2"></i>
@@ -133,10 +133,10 @@
                                                 Chỉnh Sửa
                                             </a>
                                             <a href="${pageContext.request.contextPath}/coupon?action=delete&id=${coupon.couponID}" 
-                                               class="btn btn-outline-danger btn-sm"
-                                               onclick="return confirm('Bạn có chắc muốn xóa coupon này?')">
-                                                <i class="fas fa-trash me-1"></i>
-                                                Xóa
+                                               class="btn btn-outline-warning btn-sm"
+                                               onclick="return confirm('Bạn có chắc muốn ẩn coupon này?')">
+                                                <i class="fas fa-eye-slash me-1"></i>
+                                                Ẩn
                                             </a>
                                         </div>
                                     </div>

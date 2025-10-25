@@ -48,7 +48,7 @@
                         </div>
                         <div class="col-md-6">
                             <strong>Tên coupon:</strong><br>
-                            ${coupon.couponName}
+                            ${coupon.description}
                         </div>
                     </div>
                     
@@ -73,23 +73,23 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Hiệu lực từ:</strong><br>
-                            <fmt:formatDate value="${coupon.validFrom}" pattern="dd/MM/yyyy"/>
+                            ${coupon.startDate}
                         </div>
                         <div class="col-md-6">
                             <strong>Hết hạn:</strong><br>
-                            <fmt:formatDate value="${coupon.validTo}" pattern="dd/MM/yyyy"/>
+                            ${coupon.endDate}
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Số lần sử dụng:</strong><br>
-                            <span class="badge bg-primary">${coupon.usageCount}/${coupon.usageLimit}</span>
+                            <span class="badge bg-primary">${coupon.usedCount}/${coupon.usageLimit}</span>
                         </div>
                         <div class="col-md-6">
                             <strong>Trạng thái:</strong><br>
                             <c:choose>
-                                <c:when test="${coupon.isActive}">
+                                <c:when test="${coupon.active}">
                                     <span class="badge bg-success">Hoạt động</span>
                                 </c:when>
                                 <c:otherwise>
@@ -99,10 +99,10 @@
                         </div>
                     </div>
 
-                    <c:if test="${coupon.usageCount > 0}">
+                    <c:if test="${coupon.usedCount > 0}">
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Lưu ý:</strong> Coupon này đã được sử dụng ${coupon.usageCount} lần. 
+                            <strong>Lưu ý:</strong> Coupon này đã được sử dụng ${coupon.usedCount} lần. 
                             Việc xóa có thể ảnh hưởng đến dữ liệu booking.
                         </div>
                     </c:if>

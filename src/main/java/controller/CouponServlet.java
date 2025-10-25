@@ -253,6 +253,7 @@ public class CouponServlet extends HttpServlet {
 
         try {
             String couponCode = request.getParameter("couponCode");
+            String couponName = request.getParameter("couponName");
             String description = request.getParameter("description");
             String discountType = request.getParameter("discountType");
             BigDecimal discountValue = new BigDecimal(request.getParameter("discountValue"));
@@ -269,12 +270,14 @@ public class CouponServlet extends HttpServlet {
             Integer roomTypeID = (roomTypeIdStr != null && !roomTypeIdStr.isEmpty() && !"0".equals(roomTypeIdStr)) 
                 ? Integer.parseInt(roomTypeIdStr) : null;
             
-            LocalDate startDate = LocalDate.parse(request.getParameter("startDate"));
-            LocalDate endDate = LocalDate.parse(request.getParameter("endDate"));
+            LocalDate startDate = LocalDate.parse(request.getParameter("validFrom"));
+            LocalDate endDate = LocalDate.parse(request.getParameter("validTo"));
             
             String usageLimitStr = request.getParameter("usageLimit");
             Integer usageLimit = (usageLimitStr != null && !usageLimitStr.isEmpty()) 
                 ? Integer.parseInt(usageLimitStr) : null;
+            
+            boolean isActive = "on".equals(request.getParameter("isActive"));
 
             // Validate dates
             if (endDate.isBefore(startDate) || endDate.isEqual(startDate)) {
@@ -284,8 +287,10 @@ public class CouponServlet extends HttpServlet {
             }
 
             // Create coupon
-            Coupon coupon = new Coupon(couponCode.toUpperCase(), 
-                (couponName != null && !couponName.isEmpty()) ? couponName : description, 
+            String finalDescription = (couponName != null && !couponName.isEmpty()) ? couponName : 
+                (description != null && !description.isEmpty()) ? description : "";
+            
+            Coupon coupon = new Coupon(couponCode.toUpperCase(), finalDescription, 
                 discountType, discountValue, minBookingAmount, maxDiscountAmount, roomTypeID, 
                 startDate, endDate, usageLimit, loggedInUser.getUserID());
 
@@ -314,8 +319,9 @@ public class CouponServlet extends HttpServlet {
             throws ServletException, IOException {
         
         try {
-            int couponID = Integer.parseInt(request.getParameter("couponID"));
+            int couponID = Integer.parseInt(request.getParameter("id"));
             String couponCode = request.getParameter("couponCode");
+            String couponName = request.getParameter("couponName");
             String description = request.getParameter("description");
             String discountType = request.getParameter("discountType");
             BigDecimal discountValue = new BigDecimal(request.getParameter("discountValue"));
@@ -332,14 +338,14 @@ public class CouponServlet extends HttpServlet {
             Integer roomTypeID = (roomTypeIdStr != null && !roomTypeIdStr.isEmpty() && !"0".equals(roomTypeIdStr)) 
                 ? Integer.parseInt(roomTypeIdStr) : null;
             
-            LocalDate startDate = LocalDate.parse(request.getParameter("startDate"));
-            LocalDate endDate = LocalDate.parse(request.getParameter("endDate"));
+            LocalDate startDate = LocalDate.parse(request.getParameter("validFrom"));
+            LocalDate endDate = LocalDate.parse(request.getParameter("validTo"));
             
             String usageLimitStr = request.getParameter("usageLimit");
             Integer usageLimit = (usageLimitStr != null && !usageLimitStr.isEmpty()) 
                 ? Integer.parseInt(usageLimitStr) : null;
             
-            boolean isActive = "1".equals(request.getParameter("isActive"));
+            boolean isActive = "on".equals(request.getParameter("isActive"));
 
             // Get existing coupon
             CouponDAO couponDAO = new CouponDAO();
@@ -352,7 +358,9 @@ public class CouponServlet extends HttpServlet {
 
             // Update fields
             coupon.setCouponCode(couponCode.toUpperCase());
-            coupon.setDescription(description);
+            String finalDescription = (couponName != null && !couponName.isEmpty()) ? couponName : 
+                (description != null && !description.isEmpty()) ? description : "";
+            coupon.setDescription(finalDescription);
             coupon.setDiscountType(discountType);
             coupon.setDiscountValue(discountValue);
             coupon.setMinBookingAmount(minBookingAmount);
@@ -391,7 +399,7 @@ public class CouponServlet extends HttpServlet {
             boolean result = couponDAO.deleteCoupon(couponID);
 
             if (result) {
-                response.sendRedirect(request.getContextPath() + "/coupon?view=list&deleted=1");
+                response.sendRedirect(request.getContextPath() + "/coupon?view=list&hidden=1");
             } else {
                 response.sendRedirect(request.getContextPath() + "/coupon?view=delete&id=" + couponID + "&error=1");
             }
