@@ -95,7 +95,7 @@ public class MD5Util {
      */
     public static void main(String[] args) {
         // Example usage
-        String password = "admin123";
+        String password = "1";
         String hashed = hashPassword(password);
         
         System.out.println("Original password: " + password);

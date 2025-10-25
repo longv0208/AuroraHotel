@@ -1,5 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-    <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+    <%@ taglib prefix="c" uri="jakarta.tags.core" %>
         <c:set var="pageTitle" value="Home - Aurora Hotel" scope="request" />
         <%@include file="../common/head.jsp" %>
             <%@include file="../common/navbar.jsp" %>
@@ -43,11 +43,18 @@
 
 
                     <div class="text-center my-5">
-                        <a href="${pageContext.request.contextPath}/addbooking"
-                            class="btn btn-danger btn-lg fw-bold shadow-sm px-5">
-                            <i class="fas fa-plus-circle me-2"></i>
-                            Add Booking
+                        <a href="${pageContext.request.contextPath}/booking?view=search"
+                            class="btn btn-success btn-lg fw-bold shadow-sm px-5">
+                            <i class="fas fa-search me-2"></i>
+                            Tìm Kiếm Phòng
                         </a>
+                        <c:if test="${sessionScope.loggedInUser != null}">
+                            <a href="${pageContext.request.contextPath}/booking?view=my-bookings"
+                                class="btn btn-primary btn-lg fw-bold shadow-sm px-5 ms-3">
+                                <i class="fas fa-list me-2"></i>
+                                Booking Của Tôi
+                            </a>
+                        </c:if>
                     </div>
 
 
@@ -66,7 +73,7 @@
                                     <p class="fw-bold text-danger mb-4">2.500K/đêm</p>
                                     <div class="d-flex justify-content-between">
                                         <a href="#" class="btn btn-primary">Xem Chi Tiết</a>
-                                        <a href="#" class="btn btn-outline-success">Add Booking</a>
+                                        <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-outline-success">Đặt Phòng</a>
                                     </div>
                                 </div>
                             </div>
@@ -84,7 +91,7 @@
                                     <p class="fw-bold text-danger mb-4">3.200K/đêm</p>
                                     <div class="d-flex justify-content-between">
                                         <a href="#" class="btn btn-primary">Xem Chi Tiết</a>
-                                        <a href="#" class="btn btn-outline-success">Add Booking</a>
+                                        <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-outline-success">Đặt Phòng</a>
                                     </div>
                                 </div>
                             </div>
@@ -102,7 +109,7 @@
                                     <p class="fw-bold text-danger mb-4">1.500K/đêm</p>
                                     <div class="d-flex justify-content-between">
                                         <a href="#" class="btn btn-primary">Xem Chi Tiết</a>
-                                        <a href="#" class="btn btn-outline-success">Add Booking</a>
+                                        <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-outline-success">Đặt Phòng</a>
                                     </div>
                                 </div>
                             </div>

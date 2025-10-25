@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * @author BA LIEM
  */
-@WebServlet(name = "HotelServlet", urlPatterns = {"/home"})
+@WebServlet(name = "HotelServlet", urlPatterns = {"/home", "/aurora"})
 public class HotelServlet extends HttpServlet {
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
