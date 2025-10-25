@@ -125,6 +125,10 @@ public class CouponServlet extends HttpServlet {
                 deactivateCoupon(request, response);
                 break;
                 
+            case "activate":
+                activateCoupon(request, response);
+                break;
+                
             default:
                 response.sendRedirect(request.getContextPath() + "/coupon?view=list");
                 break;
@@ -431,6 +435,31 @@ public class CouponServlet extends HttpServlet {
 
         } catch (Exception e) {
             System.err.println("Error deactivating coupon: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/coupon?view=list&error=1");
+        }
+    }
+    
+    /**
+     * Activate coupon
+     */
+    private void activateCoupon(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        try {
+            int couponID = Integer.parseInt(request.getParameter("id"));
+
+            CouponDAO couponDAO = new CouponDAO();
+            boolean result = couponDAO.activateCoupon(couponID);
+
+            if (result) {
+                response.sendRedirect(request.getContextPath() + "/coupon?view=list&activated=1");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/coupon?view=list&error=1");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error activating coupon: " + e.getMessage());
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/coupon?view=list&error=1");
         }

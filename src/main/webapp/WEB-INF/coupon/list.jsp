@@ -47,7 +47,7 @@
                                                             <span class="badge bg-success ms-2">Hoạt động</span>
                                                         </c:when>
                                                         <c:otherwise>
-                                                            <span class="badge bg-secondary ms-2">Không hoạt động</span>
+                                                            <span class="badge bg-danger ms-2">Đã ẩn</span>
                                                         </c:otherwise>
                                                     </c:choose>
                                                 </h5>
@@ -132,12 +132,22 @@
                                                 <i class="fas fa-edit me-1"></i>
                                                 Chỉnh Sửa
                                             </a>
-                                            <a href="${pageContext.request.contextPath}/coupon?action=delete&id=${coupon.couponID}" 
-                                               class="btn btn-outline-warning btn-sm"
-                                               onclick="return confirm('Bạn có chắc muốn ẩn coupon này?')">
-                                                <i class="fas fa-eye-slash me-1"></i>
-                                                Ẩn
-                                            </a>
+                                            <c:if test="${coupon.active}">
+                                                <a href="${pageContext.request.contextPath}/coupon?view=delete&id=${coupon.couponID}" 
+                                                   class="btn btn-outline-warning btn-sm"
+                                                   onclick="return confirm('Bạn có chắc muốn ẩn coupon này?')">
+                                                    <i class="fas fa-eye-slash me-1"></i>
+                                                    Ẩn
+                                                </a>
+                                            </c:if>
+                                            <c:if test="${!coupon.active}">
+                                                <a href="${pageContext.request.contextPath}/coupon?action=activate&id=${coupon.couponID}" 
+                                                   class="btn btn-outline-success btn-sm"
+                                                   onclick="return confirm('Bạn có chắc muốn kích hoạt lại coupon này?')">
+                                                    <i class="fas fa-eye me-1"></i>
+                                                    Kích hoạt
+                                                </a>
+                                            </c:if>
                                         </div>
                                     </div>
                                 </div>

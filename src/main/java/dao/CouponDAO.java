@@ -256,7 +256,6 @@ public class CouponDAO extends DBContext {
         int offset = (page - 1) * RECORDS_PER_PAGE;
         
         String sql = "SELECT * FROM Coupons " +
-                     "WHERE IsActive = 1 " +
                      "ORDER BY CreatedDate DESC " +
                      "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
         
@@ -405,12 +404,34 @@ public class CouponDAO extends DBContext {
     }
     
     /**
+     * Activate a coupon (unhide)
+     * 
+     * @param couponID Coupon ID to activate
+     * @return true if activation successful, false otherwise
+     */
+    public boolean activateCoupon(int couponID) {
+        String sql = "UPDATE Coupons SET IsActive = 1 WHERE CouponID = ?";
+        
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, couponID);
+            
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Error activating coupon: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
      * Get total number of coupons
      * 
      * @return Total count of coupons
      */
     public int getTotalRows() {
-        String sql = "SELECT COUNT(*) FROM Coupons WHERE IsActive = 1";
+        String sql = "SELECT COUNT(*) FROM Coupons";
         
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
