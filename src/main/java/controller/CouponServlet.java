@@ -284,8 +284,9 @@ public class CouponServlet extends HttpServlet {
             }
 
             // Create coupon
-            Coupon coupon = new Coupon(couponCode.toUpperCase(), description, discountType, 
-                discountValue, minBookingAmount, maxDiscountAmount, roomTypeID, 
+            Coupon coupon = new Coupon(couponCode.toUpperCase(), 
+                (couponName != null && !couponName.isEmpty()) ? couponName : description, 
+                discountType, discountValue, minBookingAmount, maxDiscountAmount, roomTypeID, 
                 startDate, endDate, usageLimit, loggedInUser.getUserID());
 
             CouponDAO couponDAO = new CouponDAO();
