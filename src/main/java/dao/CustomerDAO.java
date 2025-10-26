@@ -260,12 +260,21 @@ public class CustomerDAO extends DBContext {
             }
         } catch (SQLException e) {
             // If UserID column doesn't exist, try without it
-            if (e.getMessage() != null && e.getMessage().contains("UserID")) {
+            String errorMsg = e.getMessage();
+            System.err.println("DEBUG: SQLException caught in createCustomer: " + errorMsg);
+            
+            // Check for UserID column error (case insensitive)
+            boolean isUserIDError = errorMsg != null && 
+                (errorMsg.toLowerCase().contains("userid") || 
+                 errorMsg.toLowerCase().contains("invalid column"));
+            
+            System.err.println("DEBUG: isUserIDError = " + isUserIDError);
+            
+            if (isUserIDError) {
                 System.out.println("UserID column not found, attempting insert without UserID...");
                 return createCustomerWithoutUserID(customer);
             } else {
                 System.err.println("Error creating customer: " + e.getMessage());
-                e.printStackTrace();
             }
         }
 
@@ -279,6 +288,7 @@ public class CustomerDAO extends DBContext {
      * @return Customer ID if successful, -1 otherwise
      */
     private int createCustomerWithoutUserID(Customer customer) {
+        System.out.println("Attempting to create customer without UserID...");
         String sql = "INSERT INTO Customers (FullName, IDCard, Phone, Email, Address, " +
                 "DateOfBirth, Nationality, Notes) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -299,12 +309,16 @@ public class CustomerDAO extends DBContext {
             ps.setString(7, customer.getNationality());
             ps.setString(8, customer.getNotes());
 
+            System.out.println("Executing INSERT without UserID...");
             int rowsAffected = ps.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);
 
             if (rowsAffected > 0) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
-                        return rs.getInt(1);
+                        int customerID = rs.getInt(1);
+                        System.out.println("Customer created successfully with ID: " + customerID);
+                        return customerID;
                     }
                 }
             }
@@ -313,6 +327,7 @@ public class CustomerDAO extends DBContext {
             e.printStackTrace();
         }
 
+        System.out.println("Failed to create customer without UserID, returning -1");
         return -1;
     }
 
