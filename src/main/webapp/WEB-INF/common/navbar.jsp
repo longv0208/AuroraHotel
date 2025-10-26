@@ -77,6 +77,10 @@
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
+                                <li><a class="dropdown-item"
+                                        href="${pageContext.request.contextPath}/feedback?action=admin">
+                                        <i class="fas fa-comments me-2"></i> Feedback Management
+                                    </a></li>
                                 <li><a class="dropdown-item" href="${pageContext.request.contextPath}/coupon?view=list">
                                         <i class="fas fa-ticket-alt me-2"></i> Coupon Management
                                     </a></li>

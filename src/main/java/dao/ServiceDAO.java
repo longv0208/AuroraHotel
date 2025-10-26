@@ -14,9 +14,9 @@ import java.util.List;
  * @author Aurora Hotel Team
  */
 public class ServiceDAO extends DBContext {
-    
+
     private static final int RECORDS_PER_PAGE = 10;
-    
+
     /**
      * Create a new service
      * 
@@ -25,8 +25,8 @@ public class ServiceDAO extends DBContext {
      */
     public int createService(Service service) {
         String sql = "INSERT INTO Services (ServiceName, Description, Price, Unit, Category, IsActive) " +
-                     "VALUES (?, ?, ?, ?, ?, ?)";
-        
+                "VALUES (?, ?, ?, ?, ?, ?)";
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, service.getServiceName());
             ps.setString(2, service.getDescription());
@@ -34,9 +34,9 @@ public class ServiceDAO extends DBContext {
             ps.setString(4, service.getUnit());
             ps.setString(5, service.getCategory());
             ps.setBoolean(6, service.isActive());
-            
+
             int rowsAffected = ps.executeUpdate();
-            
+
             if (rowsAffected > 0) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
@@ -48,10 +48,10 @@ public class ServiceDAO extends DBContext {
             System.err.println("Error creating service: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return -1;
     }
-    
+
     /**
      * Get service by ID
      * 
@@ -60,10 +60,10 @@ public class ServiceDAO extends DBContext {
      */
     public Service getServiceById(int serviceID) {
         String sql = "SELECT * FROM Services WHERE ServiceID = ?";
-        
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setInt(1, serviceID);
-            
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return extractServiceFromResultSet(rs);
@@ -73,10 +73,10 @@ public class ServiceDAO extends DBContext {
             System.err.println("Error getting service by ID: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return null;
     }
-    
+
     /**
      * Get all active services (without pagination)
      * 
@@ -84,12 +84,12 @@ public class ServiceDAO extends DBContext {
      */
     public List<Service> getAllActiveServices() {
         List<Service> services = new ArrayList<>();
-        
+
         String sql = "SELECT * FROM Services WHERE IsActive = 1 ORDER BY Category, ServiceName";
-        
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            
+                ResultSet rs = ps.executeQuery()) {
+
             while (rs.next()) {
                 Service service = extractServiceFromResultSet(rs);
                 services.add(service);
@@ -98,10 +98,10 @@ public class ServiceDAO extends DBContext {
             System.err.println("Error getting all active services: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return services;
     }
-    
+
     /**
      * Get all services with pagination
      * 
@@ -111,15 +111,15 @@ public class ServiceDAO extends DBContext {
     public List<Service> getAllServices(int page) {
         List<Service> services = new ArrayList<>();
         int offset = (page - 1) * RECORDS_PER_PAGE;
-        
+
         String sql = "SELECT * FROM Services " +
-                     "ORDER BY Category, ServiceName " +
-                     "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-        
+                "ORDER BY Category, ServiceName " +
+                "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setInt(1, offset);
             ps.setInt(2, RECORDS_PER_PAGE);
-            
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Service service = extractServiceFromResultSet(rs);
@@ -130,24 +130,24 @@ public class ServiceDAO extends DBContext {
             System.err.println("Error getting all services: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return services;
     }
-    
+
     /**
      * Get services by category
-     * 
+     *
      * @param category Service category
      * @return List of Service objects
      */
     public List<Service> getServicesByCategory(String category) {
         List<Service> services = new ArrayList<>();
-        
+
         String sql = "SELECT * FROM Services WHERE Category = ? AND IsActive = 1 ORDER BY ServiceName";
-        
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setString(1, category);
-            
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Service service = extractServiceFromResultSet(rs);
@@ -158,10 +158,37 @@ public class ServiceDAO extends DBContext {
             System.err.println("Error getting services by category: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return services;
     }
-    
+
+    /**
+     * Get distinct categories from active services
+     *
+     * @return List of category names
+     */
+    public List<String> getDistinctCategories() {
+        List<String> categories = new ArrayList<>();
+
+        String sql = "SELECT DISTINCT Category FROM Services WHERE IsActive = 1 ORDER BY Category";
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                String category = rs.getString("Category");
+                if (category != null && !category.trim().isEmpty()) {
+                    categories.add(category);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting distinct categories: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return categories;
+    }
+
     /**
      * Update a service
      * 
@@ -170,9 +197,9 @@ public class ServiceDAO extends DBContext {
      */
     public boolean updateService(Service service) {
         String sql = "UPDATE Services SET ServiceName = ?, Description = ?, Price = ?, " +
-                     "Unit = ?, Category = ?, IsActive = ? " +
-                     "WHERE ServiceID = ?";
-        
+                "Unit = ?, Category = ?, IsActive = ? " +
+                "WHERE ServiceID = ?";
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setString(1, service.getServiceName());
             ps.setString(2, service.getDescription());
@@ -181,17 +208,17 @@ public class ServiceDAO extends DBContext {
             ps.setString(5, service.getCategory());
             ps.setBoolean(6, service.isActive());
             ps.setInt(7, service.getServiceID());
-            
+
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
-            
+
         } catch (SQLException e) {
             System.err.println("Error updating service: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
-    
+
     /**
      * Delete a service (soft delete - set IsActive to 0)
      * 
@@ -200,20 +227,20 @@ public class ServiceDAO extends DBContext {
      */
     public boolean deleteService(int serviceID) {
         String sql = "UPDATE Services SET IsActive = 0 WHERE ServiceID = ?";
-        
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setInt(1, serviceID);
-            
+
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
-            
+
         } catch (SQLException e) {
             System.err.println("Error deleting service: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
-    
+
     /**
      * Get total number of services
      * 
@@ -221,10 +248,10 @@ public class ServiceDAO extends DBContext {
      */
     public int getTotalRows() {
         String sql = "SELECT COUNT(*) FROM Services";
-        
+
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            
+                ResultSet rs = ps.executeQuery()) {
+
             if (rs.next()) {
                 return rs.getInt(1);
             }
@@ -232,13 +259,13 @@ public class ServiceDAO extends DBContext {
             System.err.println("Error getting total rows: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return 0;
     }
-    
+
     /**
      * Extract Service object from ResultSet
-     * 
+     *
      * @param rs ResultSet positioned at a service record
      * @return Service object
      * @throws SQLException if database access error occurs
@@ -252,8 +279,7 @@ public class ServiceDAO extends DBContext {
         service.setUnit(rs.getString("Unit"));
         service.setCategory(rs.getString("Category"));
         service.setActive(rs.getBoolean("IsActive"));
-        
+
         return service;
     }
 }
-

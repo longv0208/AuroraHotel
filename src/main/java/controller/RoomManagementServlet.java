@@ -30,42 +30,7 @@ import java.util.List;
 @WebServlet(name = "RoomManagementServlet", urlPatterns = { "/roomManagement" })
 public class RoomManagementServlet extends HttpServlet {
 
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request  servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException      if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet RoomManagementServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet RoomManagementServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
-        }
-    }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the
-    // + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request  servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException      if an I/O error occurs
-     */
+    
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -161,13 +126,42 @@ public class RoomManagementServlet extends HttpServlet {
             boolean isActive = "1".equals(request.getParameter("isActive"));
 
             RoomDAO roomDAO = new RoomDAO();
+            RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
+
+            // Validate room number is not empty
+            if (roomNumber == null || roomNumber.trim().isEmpty()) {
+                request.setAttribute("error", "Số phòng không được để trống");
+                Room room = roomDAO.getById(id);
+                List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
+                request.setAttribute("room", room);
+                request.setAttribute("roomTypes", roomTypes);
+                request.getRequestDispatcher("/WEB-INF/room/edit.jsp").forward(request, response);
+                return;
+            }
+
+            // Check if room number already exists for another room
+            if (roomDAO.isRoomNumberExistsForOtherRoom(roomNumber.trim(), id)) {
+                request.setAttribute("error", "Số phòng '" + roomNumber + "' đã tồn tại. Vui lòng chọn số phòng khác.");
+                Room room = roomDAO.getById(id);
+                List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
+                request.setAttribute("room", room);
+                request.setAttribute("roomTypes", roomTypes);
+                request.getRequestDispatcher("/WEB-INF/room/edit.jsp").forward(request, response);
+                return;
+            }
+
             Room room = new Room(id, roomNumber, roomTypeID, floor, status, description, isActive);
             boolean result = roomDAO.update(room);
 
             if (result) {
+                request.setAttribute("success", "Cập nhật phòng thành công");
                 response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
             } else {
-                response.sendRedirect(request.getContextPath() + "/roomManagement?view=edit&id=" + id);
+                request.setAttribute("error", "Không thể cập nhật phòng. Vui lòng thử lại.");
+                List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
+                request.setAttribute("room", room);
+                request.setAttribute("roomTypes", roomTypes);
+                request.getRequestDispatcher("/WEB-INF/room/edit.jsp").forward(request, response);
             }
 
         } else if (action.equals("create")) {
@@ -179,13 +173,47 @@ public class RoomManagementServlet extends HttpServlet {
             String description = request.getParameter("description");
 
             RoomDAO roomDAO = new RoomDAO();
+            RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
+
+            // Validate room number is not empty
+            if (roomNumber == null || roomNumber.trim().isEmpty()) {
+                request.setAttribute("error", "Số phòng không được để trống");
+                List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
+                request.setAttribute("roomTypes", roomTypes);
+                request.getRequestDispatcher("/WEB-INF/room/create.jsp").forward(request, response);
+                return;
+            }
+
+            // Check if room number already exists
+            if (roomDAO.isRoomNumberExists(roomNumber.trim())) {
+                request.setAttribute("error", "Số phòng '" + roomNumber + "' đã tồn tại. Vui lòng chọn số phòng khác.");
+                request.setAttribute("roomNumber", roomNumber);
+                request.setAttribute("roomTypeID", roomTypeID);
+                request.setAttribute("floor", floor);
+                request.setAttribute("status", status);
+                request.setAttribute("description", description);
+                List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
+                request.setAttribute("roomTypes", roomTypes);
+                request.getRequestDispatcher("/WEB-INF/room/create.jsp").forward(request, response);
+                return;
+            }
+
             Room room = new Room(roomNumber, roomTypeID, floor, status, description);
             boolean result = roomDAO.create(room);
 
             if (result) {
+                request.setAttribute("success", "Tạo phòng thành công");
                 response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
             } else {
-                response.sendRedirect(request.getContextPath() + "/roomManagement?view=create");
+                request.setAttribute("error", "Không thể tạo phòng. Vui lòng thử lại.");
+                List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
+                request.setAttribute("roomTypes", roomTypes);
+                request.setAttribute("roomNumber", roomNumber);
+                request.setAttribute("roomTypeID", roomTypeID);
+                request.setAttribute("floor", floor);
+                request.setAttribute("status", status);
+                request.setAttribute("description", description);
+                request.getRequestDispatcher("/WEB-INF/room/create.jsp").forward(request, response);
             }
 
         } else if (action.equals("delete")) {
