@@ -117,14 +117,14 @@ public class RegisterServlet extends HttpServlet {
                     // Registration successful
                     request.setAttribute("successMessage",
                         "Đăng ký thành công! Vui lòng đăng nhập.");
-                    request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+                    request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
                 } else {
                     // User created but customer creation failed
                     // Still allow user to login, customer will be created later if needed
                     System.err.println("Warning: User created but Customer creation failed for userID: " + userID);
                     request.setAttribute("successMessage",
                         "Đăng ký thành công! Vui lòng đăng nhập.");
-                    request.getRequestDispatcher("/WEB-INF/auth/login.jsp").forward(request, response);
+                    request.getRequestDispatcher("/WEB-INF/login.jsp").forward(request, response);
                 }
             } else {
                 request.setAttribute("errorMessage", "Đăng ký thất bại. Vui lòng thử lại.");
