@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,16 +76,31 @@ public class FeedbackServlet extends HttpServlet {
             User loggedInUser = (User) session.getAttribute("loggedInUser");
             
             // Get available bookings for feedback (checked out and not yet reviewed)
-            List<Booking> availableBookings = null;
+            List<Booking> availableBookings = new ArrayList<>();
             if (loggedInUser != null) {
-                BookingDAO bookingDAO = new BookingDAO();
-                List<Booking> userBookings = bookingDAO.getBookingsByUser(loggedInUser.getUserID());
-                
-                // Filter: only checked out bookings that haven't been reviewed
-                availableBookings = userBookings.stream()
-                    .filter(b -> "Đã checkout".equals(b.getStatus()))
-                    .filter(b -> !reviewDAO.hasReviewed(b.getBookingID(), b.getCustomerID()))
-                    .collect(Collectors.toList());
+                try {
+                    BookingDAO bookingDAO = new BookingDAO();
+                    List<Booking> userBookings = bookingDAO.getBookingsByUser(loggedInUser.getUserID());
+                    
+                    // Filter: only checked out bookings that haven't been reviewed
+                    if (userBookings != null && !userBookings.isEmpty()) {
+                        availableBookings = userBookings.stream()
+                            .filter(b -> b != null && "Đã checkout".equals(b.getStatus()))
+                            .filter(b -> {
+                                try {
+                                    return !reviewDAO.hasReviewed(b.getBookingID(), b.getCustomerID());
+                                } catch (Exception e) {
+                                    System.err.println("Error checking review status for booking " + b.getBookingID() + ": " + e.getMessage());
+                                    return true; // If error checking, allow it to be shown
+                                }
+                            })
+                            .collect(Collectors.toList());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error getting user bookings: " + e.getMessage());
+                    e.printStackTrace();
+                    // Continue with empty list instead of redirecting
+                }
             }
 
             int page = 1;
@@ -99,9 +115,18 @@ public class FeedbackServlet extends HttpServlet {
                 }
             }
 
-            List<Review> approvedReviews = reviewDAO.getApprovedReviews(page);
-            int totalRows = reviewDAO.getTotalApprovedReviews();
-            int totalPages = (int) Math.ceil((double) totalRows / 10);
+            List<Review> approvedReviews = new ArrayList<>();
+            int totalRows = 0;
+            int totalPages = 0;
+            try {
+                approvedReviews = reviewDAO.getApprovedReviews(page);
+                totalRows = reviewDAO.getTotalApprovedReviews();
+                totalPages = (int) Math.ceil((double) totalRows / 10);
+            } catch (Exception e) {
+                System.err.println("Error getting approved reviews: " + e.getMessage());
+                e.printStackTrace();
+                // Continue with empty list
+            }
 
             request.setAttribute("availableBookings", availableBookings);
             request.setAttribute("approvedReviews", approvedReviews);
@@ -113,8 +138,13 @@ public class FeedbackServlet extends HttpServlet {
         } catch (Exception e) {
             System.err.println("Error showing feedback page: " + e.getMessage());
             e.printStackTrace();
-            request.setAttribute("error", "Có lỗi xảy ra khi tải trang");
-            request.getRequestDispatcher("/WEB-INF/hotel/home.jsp").forward(request, response);
+            // Show feedback page with error message instead of redirecting to home
+            request.setAttribute("error", "Có lỗi xảy ra khi tải trang: " + e.getMessage());
+            request.setAttribute("availableBookings", new ArrayList<>());
+            request.setAttribute("approvedReviews", new ArrayList<>());
+            request.setAttribute("currentPage", 1);
+            request.setAttribute("totalPages", 0);
+            request.getRequestDispatcher("/WEB-INF/hotel/feedback.jsp").forward(request, response);
         }
     }
 

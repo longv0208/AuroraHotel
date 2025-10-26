@@ -1,6 +1,7 @@
 <%-- Document : navbar Created on : Oct 25, 2025 Author : Aurora Hotel Team Description: Common navigation bar - simple
     and clean design --%>
 
+
 <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container-fluid">
         <!-- Logo and Brand -->
@@ -39,7 +40,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link ${pageContext.request.requestURI.contains('/booking') ? 'active' : ''}"
-                       href="${pageContext.request.contextPath}/booking?view=search">
+                       href="${pageContext.request.contextPath}/booking?view=my-bookings">
                         <i class="fas fa-calendar-check me-1"></i> Booking
                     </a>
                 </li>
@@ -57,57 +58,60 @@
                 </li>
 
                 <!-- Admin Menu (Only for Admin role) -->
-                <c:if test="${sessionScope.loggedInUser != null && sessionScope.loggedInUser.role == 'Admin'}">
-                    <li class="nav-item">
-                        <a class="nav-link ${pageContext.request.requestURI.contains('/management') ? 'active' : ''}"
-                           href="${pageContext.request.contextPath}/feedback?action=admin">
-                            <i class="fas fa-comments me-1"></i> Management
-                        </a>
-                    </li>
-                    <!--                        <li class="nav-item dropdown">
-                                                <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fas fa-cog me-1"></i> Management
-                                                </a>
-                                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
-                                                    <li><a class="dropdown-item"
-                                                            href="${pageContext.request.contextPath}/roomManagement?view=list">
-                                                            <i class="fas fa-door-open me-2"></i> Room Management
-                                                        </a></li>
-                                                    <li><a class="dropdown-item"
-                                                            href="${pageContext.request.contextPath}/service?view=list">
-                                                            <i class="fas fa-concierge-bell me-2"></i> Service Management
-                                                        </a></li>
-                                                    <li><a class="dropdown-item"
-                                                            href="${pageContext.request.contextPath}/customer?view=list">
-                                                            <i class="fas fa-users me-2"></i> Customer Management
-                                                        </a></li>
-                                                    <li><a class="dropdown-item"
-                                                            href="${pageContext.request.contextPath}/booking?view=list">
-                                                            <i class="fas fa-calendar-check me-2"></i> Booking Management
-                                                        </a></li>
-                                                    <li>
-                                                        <hr class="dropdown-divider">
-                                                    </li>
-                                                    <li><a class="dropdown-item"
-                                                            href="${pageContext.request.contextPath}/feedback?action=admin">
-                                                            <i class="fas fa-comments me-2"></i> Feedback Management
-                                                        </a></li>
-                                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/coupon?view=list">
-                                                            <i class="fas fa-ticket-alt me-2"></i> Coupon Management
-                                                        </a></li>
-                                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/report">
-                                                            <i class="fas fa-chart-line me-2"></i> Reports
-                                                        </a></li>
-                                                </ul>
-                                            </li>-->
+                <c:if test="${not empty sessionScope.loggedInUser}">
+                    <c:set var="userRole" value="${sessionScope.loggedInUser.role}" />
+                    <c:if test="${userRole eq 'Admin'}">
+                        <li class="nav-item">
+                            <a class="nav-link ${pageContext.request.requestURI.contains('/management') ? 'active' : ''}"
+                               href="${pageContext.request.contextPath}/feedback?action=admin">
+                                <i class="fas fa-comments me-1"></i> Management
+                            </a>
+                        </li>
+                    </c:if>
                 </c:if>
+                <!--                        <li class="nav-item dropdown">
+                                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-cog me-1"></i> Management
+                                            </a>
+                                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                                <li><a class="dropdown-item"
+                                                        href="${pageContext.request.contextPath}/roomManagement?view=list">
+                                                        <i class="fas fa-door-open me-2"></i> Room Management
+                                                    </a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="${pageContext.request.contextPath}/service?view=list">
+                                                        <i class="fas fa-concierge-bell me-2"></i> Service Management
+                                                    </a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="${pageContext.request.contextPath}/customer?view=list">
+                                                        <i class="fas fa-users me-2"></i> Customer Management
+                                                    </a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="${pageContext.request.contextPath}/booking?view=list">
+                                                        <i class="fas fa-calendar-check me-2"></i> Booking Management
+                                                    </a></li>
+                                                <li>
+                                                    <hr class="dropdown-divider">
+                                                </li>
+                                                <li><a class="dropdown-item"
+                                                        href="${pageContext.request.contextPath}/feedback?action=admin">
+                                                        <i class="fas fa-comments me-2"></i> Feedback Management
+                                                    </a></li>
+                                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/coupon?view=list">
+                                                        <i class="fas fa-ticket-alt me-2"></i> Coupon Management
+                                                    </a></li>
+                                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/report">
+                                                        <i class="fas fa-chart-line me-2"></i> Reports
+                                                    </a></li>
+                                            </ul>
+                                        </li>-->
             </ul>
 
             <!-- User Profile Menu (Right) -->
             <ul class="navbar-nav">
                 <c:choose>
-                    <c:when test="${sessionScope.loggedInUser != null}">
+                    <c:when test="${not empty sessionScope.loggedInUser}">
                         <!-- Logged In User -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
