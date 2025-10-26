@@ -1,10 +1,11 @@
-<%-- 
+<%--
     Document   : header
     Created on : Oct 17, 2025, 12:21:54 PM
     Author     : BA LIEM
 --%>
 
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="vi">
     <head>
@@ -113,7 +114,7 @@
                         class="rounded-circle"
                         >
                 </div>
-                <a class="navbar-brand" href="${pageContext.request.contextPath}/aurora" >Aurora Hotel</a>
+                <a class="navbar-brand" href="${pageContext.request.contextPath}/home" >Aurora Hotel</a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -124,7 +125,7 @@
                 <div class="collapse navbar-collapse" id="mainNavbar">
                     <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="${pageContext.request.contextPath}/aurora">Home</a>
+                            <a class="nav-link active" aria-current="page" href="${pageContext.request.contextPath}/home">Home</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="${pageContext.request.contextPath}/about">About</a>
@@ -142,30 +143,34 @@
                 </div>
 
                 <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-
-                        <a class="nav-profile d-flex align-items-center dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-
-                            <div class="profile-img-container rounded-circle me-2">
-                                <img 
-                                    src="https://i.pinimg.com/736x/ac/b0/76/acb076e352a186f0568c08f7f9d88f70.jpg" 
-                                    alt="Avt Profile" 
-                                    width="100%" 
-                                    height="100%" 
-                                    class="active"
-                                    >
-                            </div>
-
-                            Xin chào, Nguyễn Văn A</a>
-
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="#">Profile</a></li>
-                            <li><a class="dropdown-item" href="#">Setting</a></li>
-                            <li><a class="dropdown-item" href="#">Management</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Logout</a></li>
-                        </ul>
-                    </li>
+                    <c:choose>
+                        <c:when test="${sessionScope.loggedInUser != null}">
+                            <!-- Logged In User -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-profile d-flex align-items-center dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="profile-img-container rounded-circle me-2">
+                                        <img src="https://ui-avatars.com/api/?name=${sessionScope.loggedInUser.fullName}&amp;background=random" alt="Profile" class="w-100 h-100 rounded-circle">
+                                    </div>
+                                    <span>Xin chào, ${sessionScope.loggedInUser.fullName}</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/profile"><i class="fas fa-user me-2"></i> Profile</a></li>
+                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/booking?view=my-bookings"><i class="fas fa-list me-2"></i> My Bookings</a></li>
+                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/settings"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="${pageContext.request.contextPath}/logout"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                                </ul>
+                            </li>
+                        </c:when>
+                        <c:otherwise>
+                            <!-- Not Logged In -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="${pageContext.request.contextPath}/login">
+                                    <i class="fas fa-sign-in-alt me-1"></i> Login
+                                </a>
+                            </li>
+                        </c:otherwise>
+                    </c:choose>
                 </ul>
             </div>
         </nav>

@@ -1,6 +1,7 @@
 package model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Entity class for BookingHistory table
@@ -130,6 +131,18 @@ public class BookingHistory {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    /**
+     * Helper method to format changedDate as a string for JSP display
+     * @return Formatted date string (dd/MM/yyyy HH:mm) or empty string if null
+     */
+    public String getFormattedChangedDate() {
+        if (changedDate == null) {
+            return "";
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        return changedDate.format(formatter);
     }
 
     @Override

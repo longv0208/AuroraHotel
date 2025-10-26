@@ -8,6 +8,7 @@ import dao.RoomDAO;
 import dao.RoomTypeDAO;
 import model.Room;
 import model.RoomType;
+import model.User;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -37,6 +38,13 @@ public class RoomManagementServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("loggedInUser") != null) {
+
+            // Check if user is Admin
+            User loggedInUser = (User) session.getAttribute("loggedInUser");
+            if (!"Admin".equals(loggedInUser.getRole())) {
+                response.sendRedirect(request.getContextPath() + "/home");
+                return;
+            }
 
             String view = request.getParameter("view");
 
@@ -111,6 +119,19 @@ public class RoomManagementServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("loggedInUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        // Check if user is Admin
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+        if (!"Admin".equals(loggedInUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/home");
+            return;
+        }
 
         String action = request.getParameter("action");
 

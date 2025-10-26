@@ -2,12 +2,14 @@ package controller;
 
 import dao.ServiceDAO;
 import model.Service;
+import model.User;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -37,8 +39,8 @@ public class ServiceServlet extends HttpServlet {
         }
 
         // Admin views (require admin role)
-        String role = (String) request.getSession().getAttribute("role");
-        if (role == null || !role.equals("Admin")) {
+        User loggedInUser = (User) request.getSession().getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.getRole().equals("Admin")) {
             response.sendRedirect(request.getContextPath() + "/service?view=showcase");
             return;
         }

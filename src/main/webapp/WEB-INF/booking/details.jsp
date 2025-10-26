@@ -247,7 +247,14 @@
                                 <div class="timeline-item mb-3">
                                     <div class="row">
                                         <div class="col-md-2 text-muted small">
-                                            <fmt:formatDate value="${history.changedDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                            <c:choose>
+                                                <c:when test="${not empty history.formattedChangedDate}">
+                                                    ${history.formattedChangedDate}
+                                                </c:when>
+                                                <c:otherwise>
+                                                    N/A
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                         <div class="col-md-10">
                                             <div class="d-flex align-items-start">

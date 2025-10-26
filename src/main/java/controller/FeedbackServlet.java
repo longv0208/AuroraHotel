@@ -2,6 +2,7 @@ package controller;
 
 import dao.ReviewDAO;
 import model.Review;
+import model.User;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -107,7 +108,11 @@ public class FeedbackServlet extends HttpServlet {
             request.setCharacterEncoding("UTF-8");
 
             HttpSession session = request.getSession();
-            Integer loggedInUserId = (Integer) session.getAttribute("loggedInUser");
+            User loggedInUser = (User) session.getAttribute("loggedInUser");
+            int customerID = 0;
+            if (loggedInUser != null) {
+                customerID = loggedInUser.getUserID();
+            }
 
             String comment = request.getParameter("comment");
             String ratingStr = request.getParameter("rating");
@@ -151,7 +156,7 @@ public class FeedbackServlet extends HttpServlet {
             // Create review
             Review review = new Review();
             review.setBookingID(0); // No booking required for public feedback
-            review.setCustomerID(loggedInUserId != null ? loggedInUserId : 0); // 0 for guests
+            review.setCustomerID(customerID); // 0 for guests
             review.setRating(rating);
             review.setComment(comment.trim());
             review.setApproved(false); // Requires admin approval
@@ -183,8 +188,8 @@ public class FeedbackServlet extends HttpServlet {
     private void showAdminModeration(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String role = (String) request.getSession().getAttribute("role");
-        if (role == null || !role.equals("Admin")) {
+        User loggedInUser = (User) request.getSession().getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.getRole().equals("Admin")) {
             response.sendRedirect(request.getContextPath() + "/feedback");
             return;
         }
