@@ -131,7 +131,7 @@
             </div>
         </div>
 
-        <!-- Revenue Report -->
+<!--         Revenue Report 
         <div class="col-md-6 col-lg-4">
             <div class="card shadow-sm h-100 hover-card">
                 <div class="card-body text-center">
@@ -143,7 +143,7 @@
                     </a>
                 </div>
             </div>
-        </div>
+        </div>-->
 
         <!-- Occupancy Report -->
         <div class="col-md-6 col-lg-4">
