@@ -1,6 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="pageTitle" value="Quản Lý Booking - Aurora Hotel" scope="request"/>
 <jsp:include page="../common/head.jsp"/>
@@ -101,7 +103,7 @@
                                             <strong>#${booking.bookingID}</strong>
                                             <br>
                                             <small class="text-muted">
-                                                <fmt:formatDate value="${booking.bookingDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                ${booking.bookingDate.toString().substring(0, 10)} ${booking.bookingDate.toString().substring(11, 16)}
                                             </small>
                                         </td>
                                         <td>
@@ -115,10 +117,10 @@
                                             <small class="text-muted">${booking.room.roomType.typeName}</small>
                                         </td>
                                         <td>
-                                            <fmt:formatDate value="${booking.checkInDate}" pattern="dd/MM/yyyy"/>
+                                            ${booking.checkInDate}
                                         </td>
                                         <td>
-                                            <fmt:formatDate value="${booking.checkOutDate}" pattern="dd/MM/yyyy"/>
+                                            ${booking.checkOutDate}
                                         </td>
                                         <td>
                                             <c:choose>
@@ -141,8 +143,14 @@
                                         </td>
                                         <td>
                                             <strong>
-                                                <fmt:formatNumber value="${booking.totalAmount}" type="currency" currencySymbol="₫"/>
+                                                <fmt:formatNumber value="${finalTotals[booking.bookingID]}" type="currency" currencySymbol="₫"/>
                                             </strong>
+                                            <c:if test="${serviceTotals[booking.bookingID] ne null && serviceTotals[booking.bookingID] gt 0}">
+                                                <br>
+                                                <small class="text-muted">
+                                                    + DV: <fmt:formatNumber value="${serviceTotals[booking.bookingID]}" type="currency" currencySymbol="₫"/>
+                                                </small>
+                                            </c:if>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">

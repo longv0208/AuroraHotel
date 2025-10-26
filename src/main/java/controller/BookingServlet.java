@@ -3,6 +3,8 @@ package controller;
 import dao.BookingDAO;
 import dao.BookingHistoryDAO;
 import dao.BookingServiceDAO;
+import dao.CouponDAO;
+import dao.CouponUsageDAO;
 import dao.CustomerDAO;
 import dao.RoomDAO;
 import dao.RoomTypeDAO;
@@ -10,6 +12,8 @@ import dao.ServiceDAO;
 import model.Booking;
 import model.BookingHistory;
 import model.BookingService;
+import model.Coupon;
+import model.CouponUsage;
 import model.Customer;
 import model.Room;
 import model.RoomType;
@@ -26,7 +30,9 @@ import jakarta.servlet.http.HttpSession;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Servlet for Booking management operations
@@ -115,15 +121,31 @@ public class BookingServlet extends HttpServlet {
             case "create":
                 createBooking(request, response);
                 break;
-                
+
             case "cancel":
                 cancelBooking(request, response);
                 break;
-                
+
+            case "confirm":
+                confirmBooking(request, response);
+                break;
+
+            case "checkin":
+                checkinBooking(request, response);
+                break;
+
+            case "checkout":
+                checkoutBooking(request, response);
+                break;
+
+            case "validateCoupon":
+                validateCouponAjax(request, response);
+                break;
+
             case "update-status":
                 updateBookingStatus(request, response);
                 break;
-                
+
             default:
                 response.sendRedirect(request.getContextPath() + "/booking?view=list");
                 break;
@@ -135,10 +157,10 @@ public class BookingServlet extends HttpServlet {
      */
     private void showBookingList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession();
         User loggedInUser = (User) session.getAttribute("loggedInUser");
-        
+
         int page = 1;
         String pageStr = request.getParameter("page");
         if (pageStr != null && !pageStr.isEmpty()) {
@@ -152,7 +174,7 @@ public class BookingServlet extends HttpServlet {
 
         BookingDAO bookingDAO = new BookingDAO();
         List<Booking> bookings;
-        
+
         // Admin sees all bookings, User sees only their bookings
         if ("Admin".equals(loggedInUser.getRole())) {
             bookings = bookingDAO.getAllBookings(page);
@@ -160,10 +182,27 @@ public class BookingServlet extends HttpServlet {
             bookings = bookingDAO.getBookingsByUser(loggedInUser.getUserID());
         }
 
+        // Calculate total amount including services for each booking
+        BookingServiceDAO bookingServiceDAO = new BookingServiceDAO();
+        Map<Integer, BigDecimal> serviceTotals = new HashMap<>();
+        Map<Integer, BigDecimal> finalTotals = new HashMap<>();
+
+        for (Booking booking : bookings) {
+            List<BookingService> services = bookingServiceDAO.getServicesByBooking(booking.getBookingID());
+            BigDecimal serviceTotal = services.stream()
+                .map(BookingService::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            serviceTotals.put(booking.getBookingID(), serviceTotal);
+            finalTotals.put(booking.getBookingID(),
+                booking.getTotalAmount().add(serviceTotal));
+        }
+
         int totalRows = bookingDAO.getTotalRows();
         int totalPages = (int) Math.ceil((double) totalRows / 10);
 
         request.setAttribute("bookings", bookings);
+        request.setAttribute("serviceTotals", serviceTotals);
+        request.setAttribute("finalTotals", finalTotals);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalRows", totalRows);
@@ -315,6 +354,7 @@ public class BookingServlet extends HttpServlet {
             int numberOfGuests = Integer.parseInt(request.getParameter("numberOfGuests"));
             String notes = request.getParameter("notes");
             BigDecimal totalAmount = new BigDecimal(request.getParameter("totalAmount"));
+            String couponCode = request.getParameter("couponCode");
 
             // Get customer information
             String fullName = request.getParameter("fullName");
@@ -346,6 +386,27 @@ public class BookingServlet extends HttpServlet {
                 }
             } else {
                 customerID = customer.getCustomerID();
+            }
+
+            // Process coupon if provided
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            Coupon validCoupon = null;
+
+            if (couponCode != null && !couponCode.trim().isEmpty()) {
+                CouponDAO couponDAO = new CouponDAO();
+                RoomDAO roomDAO = new RoomDAO();
+                Room room = roomDAO.getById(roomID);
+
+                // Validate coupon
+                validCoupon = couponDAO.validateCoupon(couponCode.trim(), totalAmount, room.getRoomTypeID());
+
+                if (validCoupon != null) {
+                    // Calculate discount amount
+                    discountAmount = couponDAO.calculateDiscountAmount(validCoupon, totalAmount);
+                } else {
+                    // Coupon invalid - set error message but still allow booking
+                    request.setAttribute("couponError", "Mã giảm giá không hợp lệ hoặc đã hết hạn");
+                }
             }
 
             // Create booking
@@ -395,6 +456,23 @@ public class BookingServlet extends HttpServlet {
                     }
                 }
 
+                // Apply coupon if valid
+                if (validCoupon != null && discountAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    // Record coupon usage
+                    CouponUsageDAO couponUsageDAO = new CouponUsageDAO();
+                    CouponUsage couponUsage = new CouponUsage();
+                    couponUsage.setCouponID(validCoupon.getCouponID());
+                    couponUsage.setBookingID(bookingID);
+                    couponUsage.setCustomerID(customerID);
+                    couponUsage.setDiscountAmount(discountAmount);
+
+                    couponUsageDAO.create(couponUsage);
+
+                    // Increment coupon usage count
+                    CouponDAO couponDAO = new CouponDAO();
+                    couponDAO.incrementUsageCount(validCoupon.getCouponID());
+                }
+
                 response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&success=1");
             } else {
                 request.setAttribute("errorMessage", "Không thể tạo booking");
@@ -437,6 +515,11 @@ public class BookingServlet extends HttpServlet {
             List<BookingService> bookingServices = bookingServiceDAO.getServicesByBooking(bookingID);
             BigDecimal servicesTotal = bookingServiceDAO.calculateServicesTotal(bookingID);
 
+            // Load coupon usage if any
+            CouponUsageDAO couponUsageDAO = new CouponUsageDAO();
+            CouponUsage couponUsage = couponUsageDAO.getByBookingId(bookingID);
+            BigDecimal discountAmount = (couponUsage != null) ? couponUsage.getDiscountAmount() : BigDecimal.ZERO;
+
             // Load booking history
             BookingHistoryDAO bookingHistoryDAO = new BookingHistoryDAO();
             List<BookingHistory> bookingHistory = bookingHistoryDAO.getHistoryByBooking(bookingID);
@@ -444,13 +527,17 @@ public class BookingServlet extends HttpServlet {
             request.setAttribute("booking", booking);
             request.setAttribute("bookingServices", bookingServices);
             request.setAttribute("servicesTotal", servicesTotal);
+            request.setAttribute("couponUsage", couponUsage);
+            request.setAttribute("discountAmount", discountAmount);
             request.setAttribute("bookingHistory", bookingHistory);
             request.getRequestDispatcher("/WEB-INF/booking/details.jsp").forward(request, response);
 
         } catch (Exception e) {
             System.err.println("Error showing booking details: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/booking?view=list");
+            if (!response.isCommitted()) {
+                response.sendRedirect(request.getContextPath() + "/booking?view=list");
+            }
         }
     }
 
@@ -459,14 +546,31 @@ public class BookingServlet extends HttpServlet {
      */
     private void showUserBookings(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession();
         User loggedInUser = (User) session.getAttribute("loggedInUser");
 
         BookingDAO bookingDAO = new BookingDAO();
         List<Booking> bookings = bookingDAO.getBookingsByUser(loggedInUser.getUserID());
 
+        // Calculate total amount including services for each booking
+        BookingServiceDAO bookingServiceDAO = new BookingServiceDAO();
+        Map<Integer, BigDecimal> serviceTotals = new HashMap<>();
+        Map<Integer, BigDecimal> finalTotals = new HashMap<>();
+
+        for (Booking booking : bookings) {
+            List<BookingService> services = bookingServiceDAO.getServicesByBooking(booking.getBookingID());
+            BigDecimal serviceTotal = services.stream()
+                .map(BookingService::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            serviceTotals.put(booking.getBookingID(), serviceTotal);
+            finalTotals.put(booking.getBookingID(),
+                booking.getTotalAmount().add(serviceTotal));
+        }
+
         request.setAttribute("bookings", bookings);
+        request.setAttribute("serviceTotals", serviceTotals);
+        request.setAttribute("finalTotals", finalTotals);
         request.getRequestDispatcher("/WEB-INF/booking/my-bookings.jsp").forward(request, response);
     }
 
@@ -498,9 +602,9 @@ public class BookingServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&error=cannotcancel");
                 return;
             }
-            
-            // Check if check-in date is at least 24 hours away
-            if (booking.getCheckInDate().minusDays(1).isBefore(LocalDate.now())) {
+
+            // Check if check-in date has not passed (can cancel before check-in date)
+            if (booking.getCheckInDate().isBefore(LocalDate.now())) {
                 response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&error=toolate");
                 return;
             }
@@ -550,6 +654,182 @@ public class BookingServlet extends HttpServlet {
 
         } catch (Exception e) {
             System.err.println("Error updating booking status: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/booking?view=list&error=1");
+        }
+    }
+
+    /**
+     * Validate coupon via AJAX
+     */
+    private void validateCouponAjax(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        try {
+            String couponCode = request.getParameter("couponCode");
+            String totalAmountStr = request.getParameter("totalAmount");
+            String roomTypeIDStr = request.getParameter("roomTypeID");
+
+            if (couponCode == null || couponCode.trim().isEmpty()) {
+                response.getWriter().write("{\"valid\": false, \"message\": \"Vui lòng nhập mã giảm giá\"}");
+                return;
+            }
+
+            BigDecimal totalAmount = new BigDecimal(totalAmountStr);
+            Integer roomTypeID = roomTypeIDStr != null ? Integer.parseInt(roomTypeIDStr) : null;
+
+            CouponDAO couponDAO = new CouponDAO();
+            Coupon coupon = couponDAO.validateCoupon(couponCode.trim(), totalAmount, roomTypeID);
+
+            if (coupon != null) {
+                BigDecimal discountAmount = couponDAO.calculateDiscountAmount(coupon, totalAmount);
+
+                StringBuilder json = new StringBuilder();
+                json.append("{");
+                json.append("\"valid\": true,");
+                json.append("\"couponCode\": \"").append(coupon.getCouponCode()).append("\",");
+                json.append("\"description\": \"").append(coupon.getDescription() != null ? coupon.getDescription() : "").append("\",");
+                json.append("\"discountType\": \"").append(coupon.getDiscountType()).append("\",");
+                json.append("\"discountValue\": ").append(coupon.getDiscountValue()).append(",");
+                json.append("\"discountAmount\": ").append(discountAmount).append(",");
+                if (coupon.getMaxDiscountAmount() != null) {
+                    json.append("\"maxDiscountAmount\": ").append(coupon.getMaxDiscountAmount()).append(",");
+                }
+                json.append("\"finalAmount\": ").append(totalAmount.subtract(discountAmount));
+                json.append("}");
+
+                response.getWriter().write(json.toString());
+            } else {
+                response.getWriter().write("{\"valid\": false, \"message\": \"Mã giảm giá không hợp lệ hoặc không áp dụng được cho phòng này\"}");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error validating coupon: " + e.getMessage());
+            e.printStackTrace();
+            response.getWriter().write("{\"valid\": false, \"message\": \"Lỗi khi kiểm tra mã giảm giá\"}");
+        }
+    }
+
+    /**
+     * Confirm booking (Admin only)
+     */
+    private void confirmBooking(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession();
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+
+        // Check if user is Admin
+        if (!"Admin".equals(loggedInUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/booking?view=list&error=unauthorized");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/booking?view=list");
+            return;
+        }
+
+        try {
+            int bookingID = Integer.parseInt(idStr);
+            BookingDAO bookingDAO = new BookingDAO();
+
+            boolean result = bookingDAO.updateBookingStatus(bookingID, "Đã xác nhận");
+
+            if (result) {
+                response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&confirmed=1");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&error=1");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error confirming booking: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/booking?view=list&error=1");
+        }
+    }
+
+    /**
+     * Check-in booking (Admin only)
+     */
+    private void checkinBooking(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession();
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+
+        // Check if user is Admin
+        if (!"Admin".equals(loggedInUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/booking?view=list&error=unauthorized");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/booking?view=list");
+            return;
+        }
+
+        try {
+            int bookingID = Integer.parseInt(idStr);
+            BookingDAO bookingDAO = new BookingDAO();
+
+            // Update booking status and room status
+            boolean result = bookingDAO.checkinBooking(bookingID);
+
+            if (result) {
+                response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&checkedin=1");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&error=1");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error checking in booking: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/booking?view=list&error=1");
+        }
+    }
+
+    /**
+     * Check-out booking (Admin only)
+     */
+    private void checkoutBooking(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession();
+        User loggedInUser = (User) session.getAttribute("loggedInUser");
+
+        // Check if user is Admin
+        if (!"Admin".equals(loggedInUser.getRole())) {
+            response.sendRedirect(request.getContextPath() + "/booking?view=list&error=unauthorized");
+            return;
+        }
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/booking?view=list");
+            return;
+        }
+
+        try {
+            int bookingID = Integer.parseInt(idStr);
+            BookingDAO bookingDAO = new BookingDAO();
+
+            // Update booking status and room status
+            boolean result = bookingDAO.checkoutBooking(bookingID);
+
+            if (result) {
+                response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&checkedout=1");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&error=1");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error checking out booking: " + e.getMessage());
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/booking?view=list&error=1");
         }

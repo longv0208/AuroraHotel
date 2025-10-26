@@ -24,8 +24,7 @@ public class BookingDAO extends DBContext {
 
     /**
      * Search available rooms by date range and room type
-     * Uses stored procedure sp_SearchAvailableRooms
-     * 
+     *
      * @param checkInDate  Check-in date
      * @param checkOutDate Check-out date
      * @param roomTypeID   Room type ID (null for all types)
@@ -34,18 +33,40 @@ public class BookingDAO extends DBContext {
     public List<Room> searchAvailableRooms(LocalDate checkInDate, LocalDate checkOutDate, Integer roomTypeID) {
         List<Room> availableRooms = new ArrayList<>();
 
-        String sql = "{CALL sp_SearchAvailableRooms(?, ?, ?)}";
+        String sql = "SELECT r.RoomID, r.RoomNumber, r.RoomTypeID, r.Floor, r.Status, r.Description, r.IsActive, " +
+                     "rt.TypeName, rt.Description AS RoomTypeDescription, rt.BasePrice, rt.MaxGuests, rt.Amenities, rt.IsActive AS RoomTypeIsActive " +
+                     "FROM Rooms r " +
+                     "INNER JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID " +
+                     "WHERE r.IsActive = 1 " +
+                     "AND rt.IsActive = 1 " +
+                     "AND r.Status = N'Trống' " +
+                     "AND (? IS NULL OR r.RoomTypeID = ?) " +
+                     "AND r.RoomID NOT IN (" +
+                     "    SELECT RoomID FROM Bookings " +
+                     "    WHERE Status NOT IN (N'Đã hủy', N'Đã checkout') " +
+                     "    AND ((? BETWEEN CheckInDate AND CheckOutDate) " +
+                     "         OR (? BETWEEN CheckInDate AND CheckOutDate) " +
+                     "         OR (CheckInDate BETWEEN ? AND ?))" +
+                     ") " +
+                     "ORDER BY r.RoomNumber";
 
-        try (CallableStatement cs = this.getConnection().prepareCall(sql)) {
-            cs.setDate(1, Date.valueOf(checkInDate));
-            cs.setDate(2, Date.valueOf(checkOutDate));
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            // Set roomTypeID parameters (positions 1 and 2)
             if (roomTypeID != null) {
-                cs.setInt(3, roomTypeID);
+                ps.setInt(1, roomTypeID);
+                ps.setInt(2, roomTypeID);
             } else {
-                cs.setNull(3, Types.INTEGER);
+                ps.setNull(1, Types.INTEGER);
+                ps.setNull(2, Types.INTEGER);
             }
 
-            try (ResultSet rs = cs.executeQuery()) {
+            // Set date parameters (positions 3, 4, 5, 6)
+            ps.setDate(3, Date.valueOf(checkInDate));
+            ps.setDate(4, Date.valueOf(checkOutDate));
+            ps.setDate(5, Date.valueOf(checkInDate));
+            ps.setDate(6, Date.valueOf(checkOutDate));
+
+            try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Room room = extractRoomFromResultSet(rs);
                     availableRooms.add(room);
@@ -349,13 +370,13 @@ public class BookingDAO extends DBContext {
             conn.setAutoCommit(false); // Start transaction
 
             // Update booking status
-            String sql1 = "UPDATE Bookings SET Status = 'Đã hủy', UpdatedDate = GETDATE() WHERE BookingID = ?";
+            String sql1 = "UPDATE Bookings SET Status = N'Đã hủy', UpdatedDate = GETDATE() WHERE BookingID = ?";
             ps1 = conn.prepareStatement(sql1);
             ps1.setInt(1, bookingID);
             ps1.executeUpdate();
 
             // Update room status to available
-            String sql2 = "UPDATE Rooms SET Status = 'Trống' " +
+            String sql2 = "UPDATE Rooms SET Status = N'Trống' " +
                     "WHERE RoomID = (SELECT RoomID FROM Bookings WHERE BookingID = ?)";
             ps2 = conn.prepareStatement(sql2);
             ps2.setInt(1, bookingID);
@@ -394,8 +415,130 @@ public class BookingDAO extends DBContext {
     }
 
     /**
+     * Check-in booking
+     * Updates booking status to 'Đã checkin' and room status to 'Đang sử dụng'
+     *
+     * @param bookingID Booking ID
+     * @return true if check-in successful, false otherwise
+     */
+    public boolean checkinBooking(int bookingID) {
+        Connection conn = null;
+        PreparedStatement ps1 = null;
+        PreparedStatement ps2 = null;
+
+        try {
+            conn = this.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+
+            // Update booking status
+            String sql1 = "UPDATE Bookings SET Status = N'Đã checkin', UpdatedDate = GETDATE() WHERE BookingID = ?";
+            ps1 = conn.prepareStatement(sql1);
+            ps1.setInt(1, bookingID);
+            ps1.executeUpdate();
+
+            // Update room status to occupied
+            String sql2 = "UPDATE Rooms SET Status = N'Đang sử dụng' " +
+                    "WHERE RoomID = (SELECT RoomID FROM Bookings WHERE BookingID = ?)";
+            ps2 = conn.prepareStatement(sql2);
+            ps2.setInt(1, bookingID);
+            ps2.executeUpdate();
+
+            conn.commit(); // Commit transaction
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Error checking in booking: " + e.getMessage());
+            e.printStackTrace();
+
+            try {
+                if (conn != null) {
+                    conn.rollback(); // Rollback transaction on error
+                }
+            } catch (SQLException ex) {
+                System.err.println("Error rolling back transaction: " + ex.getMessage());
+            }
+
+            return false;
+
+        } finally {
+            try {
+                if (ps1 != null)
+                    ps1.close();
+                if (ps2 != null)
+                    ps2.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto-commit
+                }
+            } catch (SQLException e) {
+                System.err.println("Error closing resources: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Check-out booking
+     * Updates booking status to 'Đã checkout' and room status to 'Trống'
+     *
+     * @param bookingID Booking ID
+     * @return true if check-out successful, false otherwise
+     */
+    public boolean checkoutBooking(int bookingID) {
+        Connection conn = null;
+        PreparedStatement ps1 = null;
+        PreparedStatement ps2 = null;
+
+        try {
+            conn = this.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+
+            // Update booking status
+            String sql1 = "UPDATE Bookings SET Status = N'Đã checkout', UpdatedDate = GETDATE() WHERE BookingID = ?";
+            ps1 = conn.prepareStatement(sql1);
+            ps1.setInt(1, bookingID);
+            ps1.executeUpdate();
+
+            // Update room status to available
+            String sql2 = "UPDATE Rooms SET Status = N'Trống' " +
+                    "WHERE RoomID = (SELECT RoomID FROM Bookings WHERE BookingID = ?)";
+            ps2 = conn.prepareStatement(sql2);
+            ps2.setInt(1, bookingID);
+            ps2.executeUpdate();
+
+            conn.commit(); // Commit transaction
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Error checking out booking: " + e.getMessage());
+            e.printStackTrace();
+
+            try {
+                if (conn != null) {
+                    conn.rollback(); // Rollback transaction on error
+                }
+            } catch (SQLException ex) {
+                System.err.println("Error rolling back transaction: " + ex.getMessage());
+            }
+
+            return false;
+
+        } finally {
+            try {
+                if (ps1 != null)
+                    ps1.close();
+                if (ps2 != null)
+                    ps2.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto-commit
+                }
+            } catch (SQLException e) {
+                System.err.println("Error closing resources: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
      * Get total number of bookings
-     * 
+     *
      * @return Total count of bookings
      */
     public int getTotalRows() {

@@ -1,12 +1,62 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <c:set var="pageTitle" value="Kết Quả Tìm Kiếm - Aurora Hotel" scope="request"/>
 <jsp:include page="../common/head.jsp"/>
 <jsp:include page="../common/navbar.jsp"/>
 
-<main class="container">
+<style>
+    .room-result-card {
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s;
+        border: 1px solid #eee;
+    }
+
+    .room-result-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .room-image-placeholder {
+        width: 100%;
+        height: 250px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 80px;
+    }
+
+    .search-summary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    .price-tag {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .amenity-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        background: #f0f0f0;
+        border-radius: 5px;
+        margin: 3px;
+        font-size: 12px;
+    }
+</style>
+
+<main class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="display-6 fw-bold">
             <i class="fas fa-search text-primary me-2"></i>
@@ -18,97 +68,120 @@
         </a>
     </div>
 
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <div class="alert alert-info">
-                <i class="fas fa-calendar me-2"></i>
-                <strong>Check-in:</strong> <fmt:formatDate value="${checkInDate}" pattern="dd/MM/yyyy"/>
-                <span class="mx-3">|</span>
-                <strong>Check-out:</strong> <fmt:formatDate value="${checkOutDate}" pattern="dd/MM/yyyy"/>
-                <span class="mx-3">|</span>
-                <strong>Khách:</strong> ${guests} người
+    <!-- Search Summary -->
+    <div class="search-summary">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center flex-wrap">
+                    <div class="me-4 mb-2">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <strong>Check-in:</strong> ${checkInDate}
+                    </div>
+                    <div class="me-4 mb-2">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        <strong>Check-out:</strong> ${checkOutDate}
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-users me-2"></i>
+                        <strong>Số khách:</strong> ${param.guests != null ? param.guests : 2} người
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-md-4 text-end">
-            <span class="text-muted">Tìm thấy ${availableRooms.size()} phòng</span>
+            <div class="col-md-4 text-md-end">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Tìm thấy <span class="fw-bold">${availableRooms != null ? availableRooms.size() : 0}</span> phòng
+                </h5>
+            </div>
         </div>
     </div>
 
     <c:choose>
         <c:when test="${empty availableRooms}">
-            <div class="alert alert-warning text-center py-5">
-                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                <h4>Không tìm thấy phòng phù hợp</h4>
-                <p>Không có phòng trống trong khoảng thời gian bạn chọn.</p>
-                <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-primary">
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-bed" style="font-size: 80px; color: #ddd;"></i>
+                </div>
+                <h3>Không tìm thấy phòng phù hợp</h3>
+                <p class="text-muted">Không có phòng trống trong khoảng thời gian bạn chọn.</p>
+                <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-primary btn-lg mt-3">
                     <i class="fas fa-search me-2"></i>
                     Tìm Kiếm Lại
                 </a>
             </div>
         </c:when>
         <c:otherwise>
-            <div class="row row-cols-1 g-4">
+            <div class="row g-4">
                 <c:forEach var="room" items="${availableRooms}">
-                    <div class="col">
-                        <div class="card shadow-sm">
-                            <div class="card-body">
+                    <div class="col-12">
+                        <div class="room-result-card">
+                            <div class="card-body p-4">
                                 <div class="row">
+                                    <!-- Room Image -->
                                     <div class="col-md-4">
-                                        <c:choose>
-                                            <c:when test="${not empty room.images}">
-                                                <img src="${room.images[0].imageURL}" class="img-fluid rounded" alt="Phòng ${room.roomNumber}">
-                                            </c:when>
-                                            <c:otherwise>
-                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 200px;">
-                                                    <i class="fas fa-image fa-3x text-muted"></i>
-                                                </div>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <div class="room-image-placeholder rounded">
+                                            <i class="fas fa-hotel"></i>
+                                        </div>
                                     </div>
-                                    
+
+                                    <!-- Room Info -->
                                     <div class="col-md-5">
-                                        <h5 class="card-title">
-                                            Phòng ${room.roomNumber}
-                                            <span class="badge bg-success ms-2">Có sẵn</span>
-                                        </h5>
-                                        <p class="text-muted mb-2">${room.roomType.typeName}</p>
-                                        
                                         <div class="mb-2">
-                                            <i class="fas fa-users text-primary me-2"></i>
-                                            <span>Tối đa ${room.roomType.maxOccupancy} khách</span>
+                                            <h4 class="mb-1">Phòng ${room.roomNumber}</h4>
+                                            <span class="badge bg-success">Còn trống</span>
                                         </div>
-                                        
-                                        <div class="mb-2">
-                                            <i class="fas fa-bed text-info me-2"></i>
-                                            <span>${room.roomType.bedType}</span>
-                                        </div>
-                                        
-                                        <div class="mb-2">
-                                            <i class="fas fa-expand-arrows-alt text-success me-2"></i>
-                                            <span>${room.roomType.roomSize} m²</span>
+
+                                        <h5 class="text-primary mb-3">${room.roomType.typeName}</h5>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-users text-primary me-2" style="width: 20px;"></i>
+                                                <span>Tối đa ${room.roomType.maxGuests} người</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-building text-primary me-2" style="width: 20px;"></i>
+                                                <span>Tầng ${room.floor}</span>
+                                            </div>
+                                            <c:if test="${not empty room.description}">
+                                                <div class="d-flex align-items-start mb-2">
+                                                    <i class="fas fa-info-circle text-primary me-2 mt-1" style="width: 20px;"></i>
+                                                    <span class="text-muted small">${room.description}</span>
+                                                </div>
+                                            </c:if>
                                         </div>
 
                                         <c:if test="${not empty room.roomType.amenities}">
-                                            <div class="mb-2">
-                                                <i class="fas fa-star text-warning me-2"></i>
-                                                <span>${room.roomType.amenities}</span>
+                                            <div>
+                                                <strong class="small text-muted">Tiện nghi:</strong>
+                                                <div class="mt-2">
+                                                    <c:forEach var="amenity" items="${fn:split(room.roomType.amenities, ',')}">
+                                                        <span class="amenity-badge">${amenity.trim()}</span>
+                                                    </c:forEach>
+                                                </div>
                                             </div>
                                         </c:if>
                                     </div>
-                                    
-                                    <div class="col-md-3 text-end">
-                                        <div class="mb-3">
-                                            <h4 class="text-primary mb-0">
-                                                <fmt:formatNumber value="${room.roomType.pricePerNight}" type="currency" currencySymbol="₫"/>
-                                            </h4>
-                                            <small class="text-muted">/đêm</small>
+
+                                    <!-- Pricing & Booking -->
+                                    <div class="col-md-3">
+                                        <div class="price-tag mb-3">
+                                            <div class="text-muted small mb-2">Giá mỗi đêm</div>
+                                            <h3 class="text-primary mb-0">
+                                                <fmt:formatNumber value="${room.roomType.basePrice}" type="number" groupingUsed="true"/>₫
+                                            </h3>
                                         </div>
-                                        
-                                        <div class="d-grid">
-                                            <a href="${pageContext.request.contextPath}/booking?view=create&roomId=${room.roomID}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&guests=${guests}" 
-                                               class="btn btn-primary">
-                                                <i class="fas fa-calendar-plus me-2"></i>
-                                                Đặt Phòng
+
+                                        <div class="d-grid gap-2">
+                                            <a href="${pageContext.request.contextPath}/booking?view=create&roomId=${room.roomID}&checkInDate=${checkInDate}&checkOutDate=${checkOutDate}&guests=${param.guests != null ? param.guests : 2}"
+                                               class="btn btn-primary btn-lg">
+                                                <i class="fas fa-calendar-check me-2"></i>
+                                                Đặt Phòng Ngay
+                                            </a>
+
+                                            <a href="${pageContext.request.contextPath}/room?view=detail&id=${room.roomID}"
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye me-2"></i>
+                                                Xem Chi Tiết
                                             </a>
                                         </div>
                                     </div>

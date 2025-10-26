@@ -1,4 +1,4 @@
-<%@ page language="java" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <c:set var="pageTitle" value="Phòng - Aurora Hotel" scope="request"/>
@@ -26,6 +26,12 @@
         width: 100%;
         height: 200px;
         object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 48px;
     }
     .room-info {
         padding: 15px;
@@ -58,7 +64,7 @@
                 <h5>Bộ Lọc</h5>
                 <form method="get" action="${pageContext.request.contextPath}/room">
                     <input type="hidden" name="view" value="list">
-                    
+
                     <!-- Room Type -->
                     <div class="mb-3">
                         <label class="form-label">Loại Phòng</label>
@@ -131,25 +137,25 @@
                 <div class="room-grid">
                     <c:forEach var="room" items="${rooms}">
                         <div class="room-card">
-                            <img src="${pageContext.request.contextPath}/images/rooms/${room.roomID}.jpg" 
-                                 alt="${room.roomType}" class="room-image"
-                                 onerror="this.src='${pageContext.request.contextPath}/images/default-room.jpg'">
+                            <div class="room-image">
+                                <i class="fas fa-hotel"></i>
+                            </div>
                             <div class="room-info">
                                 <div class="room-name">Phòng ${room.roomNumber}</div>
                                 <div class="text-muted mb-2">
-                                    <i class="fas fa-door-open"></i> ${room.roomType}
+                                    <i class="fas fa-door-open"></i> ${room.roomType.typeName}
                                 </div>
                                 <div class="text-muted mb-2">
-                                    <i class="fas fa-users"></i> ${room.capacity} người
+                                    <i class="fas fa-users"></i> ${room.roomType.maxGuests} người
                                 </div>
                                 <div class="text-muted mb-2">
                                     <i class="fas fa-building"></i> Tầng ${room.floor}
                                 </div>
                                 <div class="room-price">
-                                    <fmt:formatNumber value="${room.pricePerNight}" type="number" groupingUsed="true"/>₫
+                                    <fmt:formatNumber value="${room.roomType.basePrice}" type="number" groupingUsed="true"/>₫
                                     <small class="text-muted">/đêm</small>
                                 </div>
-                                <a href="${pageContext.request.contextPath}/room?view=detail&id=${room.roomID}" 
+                                <a href="${pageContext.request.contextPath}/room?view=detail&id=${room.roomID}"
                                    class="btn btn-primary w-100">
                                     <i class="fas fa-eye"></i> Xem Chi Tiết
                                 </a>
@@ -192,4 +198,3 @@
 </main>
 
 <%@include file="../common/footer.jsp" %>
-

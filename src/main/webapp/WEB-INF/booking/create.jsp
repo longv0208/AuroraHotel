@@ -28,49 +28,59 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form method="post" action="${pageContext.request.contextPath}/booking">
+                    <c:if test="${not empty errorMessage}">
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>${errorMessage}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    </c:if>
+
+                    <form method="post" action="${pageContext.request.contextPath}/booking" id="bookingForm">
                         <input type="hidden" name="action" value="create">
-                        <input type="hidden" name="roomId" value="${room.roomID}">
+                        <input type="hidden" name="roomID" value="${room.roomID}">
                         <input type="hidden" name="checkInDate" value="${checkInDate}">
                         <input type="hidden" name="checkOutDate" value="${checkOutDate}">
-                        <input type="hidden" name="guests" value="${guests}">
+                        <input type="hidden" name="numberOfGuests" value="${param.guests != null ? param.guests : 1}">
+                        <input type="hidden" name="totalAmount" value="${totalAmount}">
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label class="form-label">Họ tên khách hàng</label>
-                                <input type="text" name="customerName" class="form-control" required>
+                                <label class="form-label">Họ tên khách hàng <span class="text-danger">*</span></label>
+                                <input type="text" name="fullName" class="form-control" required
+                                       pattern="[a-zA-ZÀ-ỹ\s]+"
+                                       title="Vui lòng nhập tên hợp lệ (chỉ chữ cái)">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Số điện thoại</label>
-                                <input type="tel" name="customerPhone" class="form-control" required>
+                                <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" name="phone" class="form-control" required
+                                       pattern="0[0-9]{9,10}"
+                                       title="Số điện thoại phải bắt đầu bằng 0 và có 10-11 số">
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
-                                <input type="email" name="customerEmail" class="form-control">
+                                <input type="email" name="email" class="form-control"
+                                       title="Vui lòng nhập email hợp lệ">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">CMND/CCCD</label>
-                                <input type="text" name="customerIdCard" class="form-control">
+                                <input type="text" name="idCard" class="form-control"
+                                       pattern="[0-9]{9,12}"
+                                       title="CMND/CCCD phải có 9-12 chữ số">
                             </div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Địa chỉ</label>
-                            <textarea name="customerAddress" class="form-control" rows="2"></textarea>
+                            <textarea name="address" class="form-control" rows="2"></textarea>
                         </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Quốc tịch</label>
-                                <input type="text" name="customerNationality" class="form-control" value="Việt Nam">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Ghi chú đặc biệt</label>
-                                <textarea name="specialRequests" class="form-control" rows="2" placeholder="Yêu cầu đặc biệt..."></textarea>
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú đặc biệt</label>
+                            <textarea name="notes" class="form-control" rows="2"
+                                      placeholder="Yêu cầu đặc biệt (tầng cao, giường đôi, v.v...)"></textarea>
                         </div>
 
                         <!-- Additional Services Section -->
@@ -120,6 +130,35 @@
                             </div>
                         </c:if>
 
+                        <!-- Coupon Section -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-ticket-alt me-2"></i>
+                                Mã Giảm Giá (Tùy Chọn)
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="text"
+                                           name="couponCode"
+                                           id="couponCodeInput"
+                                           class="form-control"
+                                           placeholder="Nhập mã giảm giá"
+                                           style="text-transform: uppercase;">
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-outline-success w-100" id="validateCouponBtn">
+                                        <i class="fas fa-check me-1"></i>
+                                        Áp Dụng
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="couponMessage" class="mt-2"></div>
+                            <div id="couponDetails" class="mt-2 alert alert-success" style="display: none;">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span id="couponDetailsText"></span>
+                            </div>
+                        </div>
+
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-calendar-check me-2"></i>
@@ -142,38 +181,50 @@
                 <div class="card-body">
                     <h6>Phòng ${room.roomNumber}</h6>
                     <p class="text-muted">${room.roomType.typeName}</p>
-                    
+
                     <div class="mb-3">
                         <strong>Check-in:</strong><br>
-                        <fmt:formatDate value="${checkInDate}" pattern="dd/MM/yyyy"/>
+                        ${checkInDate}
                     </div>
-                    
+
                     <div class="mb-3">
                         <strong>Check-out:</strong><br>
-                        <fmt:formatDate value="${checkOutDate}" pattern="dd/MM/yyyy"/>
+                        ${checkOutDate}
                     </div>
-                    
+
                     <div class="mb-3">
                         <strong>Số khách:</strong><br>
-                        ${guests} người
+                        ${param.guests != null ? param.guests : 1} người
                     </div>
-                    
+
                     <div class="mb-3">
                         <strong>Số đêm:</strong><br>
-                        ${nights} đêm
+                        ${numberOfNights} đêm
                     </div>
-                    
+
                     <hr>
-                    
-                    <div class="d-flex justify-content-between">
-                        <span>Giá/đêm:</span>
-                        <span><fmt:formatNumber value="${room.roomType.pricePerNight}" type="currency" currencySymbol="₫"/></span>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Giá phòng/đêm:</span>
+                        <span><fmt:formatNumber value="${room.roomType.basePrice}" type="number" groupingUsed="true"/>₫</span>
                     </div>
-                    
-                    <div class="d-flex justify-content-between">
-                        <span>Tổng cộng:</span>
-                        <strong><fmt:formatNumber value="${totalAmount}" type="currency" currencySymbol="₫"/></strong>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Số đêm:</span>
+                        <span>${numberOfNights} đêm</span>
                     </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Tổng cộng:</strong>
+                        <strong class="text-primary"><fmt:formatNumber value="${totalAmount}" type="number" groupingUsed="true"/>₫</strong>
+                    </div>
+
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Giá chưa bao gồm dịch vụ bổ sung
+                    </small>
                 </div>
             </div>
         </div>
@@ -193,6 +244,91 @@ document.querySelectorAll('.service-checkbox').forEach(checkbox => {
             quantityContainer.style.display = 'none';
         }
     });
+});
+
+// Validate coupon
+document.getElementById('validateCouponBtn').addEventListener('click', function() {
+    const couponCode = document.getElementById('couponCodeInput').value.trim().toUpperCase();
+    const totalAmount = ${totalAmount};
+    const roomTypeID = ${room.roomTypeID};
+
+    if (!couponCode) {
+        showCouponMessage('Vui lòng nhập mã giảm giá', 'error');
+        return;
+    }
+
+    // Show loading
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang kiểm tra...';
+
+    // Call AJAX to validate coupon
+    fetch('${pageContext.request.contextPath}/booking?action=validateCoupon', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'couponCode=' + encodeURIComponent(couponCode) +
+              '&totalAmount=' + totalAmount +
+              '&roomTypeID=' + roomTypeID
+    })
+    .then(response => response.json())
+    .then(data => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-check me-1"></i> Áp Dụng';
+
+        if (data.valid) {
+            showCouponSuccess(data);
+        } else {
+            showCouponMessage(data.message || 'Mã giảm giá không hợp lệ', 'error');
+        }
+    })
+    .catch(error => {
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-check me-1"></i> Áp Dụng';
+        showCouponMessage('Lỗi khi kiểm tra mã giảm giá', 'error');
+        console.error('Error:', error);
+    });
+});
+
+function showCouponMessage(message, type) {
+    const messageDiv = document.getElementById('couponMessage');
+    const detailsDiv = document.getElementById('couponDetails');
+
+    detailsDiv.style.display = 'none';
+
+    if (type === 'error') {
+        messageDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>' + message + '</div>';
+    } else {
+        messageDiv.innerHTML = '<div class="alert alert-info">' + message + '</div>';
+    }
+}
+
+function showCouponSuccess(data) {
+    const messageDiv = document.getElementById('couponMessage');
+    const detailsDiv = document.getElementById('couponDetails');
+    const detailsText = document.getElementById('couponDetailsText');
+
+    messageDiv.innerHTML = '';
+
+    let discountText = '';
+    if (data.discountType === 'Percent') {
+        discountText = 'Giảm ' + data.discountValue + '% (Tối đa: ' + formatCurrency(data.maxDiscountAmount || data.discountAmount) + ')';
+    } else {
+        discountText = 'Giảm ' + formatCurrency(data.discountAmount);
+    }
+
+    detailsText.innerHTML = '<strong>' + data.couponCode + '</strong>: ' + discountText +
+                           '<br><small>' + data.description + '</small>';
+    detailsDiv.style.display = 'block';
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+}
+
+// Auto uppercase coupon code
+document.getElementById('couponCodeInput').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
 });
 </script>
 

@@ -31,10 +31,10 @@ public class RoomServlet extends HttpServlet {
             throws ServletException, IOException {
         
         String view = request.getParameter("view");
-        
+
         if (view == null || view.equals("list")) {
             showRoomList(request, response);
-        } else if (view.equals("details")) {
+        } else if (view.equals("detail")) {
             showRoomDetails(request, response);
         } else {
             response.sendRedirect(request.getContextPath() + "/room?view=list");

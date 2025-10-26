@@ -67,7 +67,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Ngày đặt:</strong><br>
-                            <fmt:formatDate value="${booking.bookingDate}" pattern="dd/MM/yyyy HH:mm"/>
+                            ${booking.bookingDate.toString().substring(0, 10)} ${booking.bookingDate.toString().substring(11, 16)}
                         </div>
                         <div class="col-md-6">
                             <strong>Người đặt:</strong><br>
@@ -78,18 +78,18 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Check-in:</strong><br>
-                            <fmt:formatDate value="${booking.checkInDate}" pattern="dd/MM/yyyy"/>
+                            ${booking.checkInDate}
                         </div>
                         <div class="col-md-6">
                             <strong>Check-out:</strong><br>
-                            <fmt:formatDate value="${booking.checkOutDate}" pattern="dd/MM/yyyy"/>
+                            ${booking.checkOutDate}
                         </div>
                     </div>
 
-                    <c:if test="${not empty booking.specialRequests}">
+                    <c:if test="${not empty booking.notes}">
                         <div class="mb-0">
-                            <strong>Yêu cầu đặc biệt:</strong><br>
-                            <p class="mb-0 text-muted">${booking.specialRequests}</p>
+                            <strong>Ghi chú:</strong><br>
+                            <p class="mb-0 text-muted">${booking.notes}</p>
                         </div>
                     </c:if>
                 </div>
@@ -179,28 +179,36 @@
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Giá/đêm:</span>
-                        <span><fmt:formatNumber value="${booking.room.roomType.pricePerNight}" type="currency" currencySymbol="₫"/></span>
+                        <span>Tiền phòng:</span>
+                        <span><fmt:formatNumber value="${booking.totalAmount}" type="currency" currencySymbol="₫"/></span>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Số đêm:</span>
-                        <span>${booking.nights} đêm</span>
+                        <span>Số khách:</span>
+                        <span>${booking.numberOfGuests} người</span>
                     </div>
-                    
-                    <c:if test="${booking.discountAmount > 0}">
-                        <div class="d-flex justify-content-between mb-2 text-success">
-                            <span>Giảm giá:</span>
-                            <span>-<fmt:formatNumber value="${booking.discountAmount}" type="currency" currencySymbol="₫"/></span>
+
+                    <c:if test="${not empty bookingServices and servicesTotal > 0}">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Phí dịch vụ:</span>
+                            <span><fmt:formatNumber value="${servicesTotal}" type="currency" currencySymbol="₫"/></span>
                         </div>
                     </c:if>
-                    
+
+                    <c:if test="${discountAmount ne null && discountAmount gt 0}">
+                        <div class="d-flex justify-content-between mb-2 text-success">
+                            <span>Giảm giá:</span>
+                            <span>-<fmt:formatNumber value="${discountAmount}" type="currency" currencySymbol="₫"/></span>
+                        </div>
+                    </c:if>
+
                     <hr>
-                    
+
+                    <c:set var="finalTotal" value="${booking.totalAmount + (servicesTotal != null ? servicesTotal : 0) - (discountAmount != null ? discountAmount : 0)}" />
                     <div class="d-flex justify-content-between">
                         <strong>Tổng cộng:</strong>
                         <strong class="text-primary">
-                            <fmt:formatNumber value="${booking.totalAmount}" type="currency" currencySymbol="₫"/>
+                            <fmt:formatNumber value="${finalTotal}" type="currency" currencySymbol="₫"/>
                         </strong>
                     </div>
                 </div>

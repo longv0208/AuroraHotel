@@ -61,7 +61,7 @@
                                                     </c:choose>
                                                 </h5>
                                                 <p class="text-muted small mb-0">
-                                                    Đặt ngày: <fmt:formatDate value="${booking.bookingDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                    Đặt ngày: ${booking.bookingDate.toString().substring(0, 10)} ${booking.bookingDate.toString().substring(11, 16)}
                                                 </p>
                                             </div>
                                         </div>
@@ -76,7 +76,7 @@
                                             <div class="col-md-6">
                                                 <i class="fas fa-calendar-check text-success me-2"></i>
                                                 <strong>Check-in:</strong>
-                                                <fmt:formatDate value="${booking.checkInDate}" pattern="dd/MM/yyyy"/>
+                                                ${booking.checkInDate}
                                             </div>
                                         </div>
 
@@ -84,11 +84,11 @@
                                             <div class="col-md-6">
                                                 <i class="fas fa-calendar-times text-danger me-2"></i>
                                                 <strong>Check-out:</strong>
-                                                <fmt:formatDate value="${booking.checkOutDate}" pattern="dd/MM/yyyy"/>
+                                                ${booking.checkOutDate}
                                             </div>
                                             <div class="col-md-6">
-                                                <i class="fas fa-moon text-info me-2"></i>
-                                                <strong>Số đêm:</strong> ${booking.nights} đêm
+                                                <i class="fas fa-users text-info me-2"></i>
+                                                <strong>Số khách:</strong> ${booking.numberOfGuests} người
                                             </div>
                                         </div>
                                     </div>
@@ -97,8 +97,14 @@
                                         <div class="text-center mb-3">
                                             <small class="text-muted">Tổng tiền</small>
                                             <h4 class="text-primary mb-0">
-                                                <fmt:formatNumber value="${booking.totalAmount}" type="currency" currencySymbol="₫"/>
+                                                <fmt:formatNumber value="${finalTotals[booking.bookingID]}" type="currency" currencySymbol="₫"/>
                                             </h4>
+                                            <c:if test="${serviceTotals[booking.bookingID] ne null && serviceTotals[booking.bookingID] gt 0}">
+                                                <small class="text-muted d-block">
+                                                    (Phòng: <fmt:formatNumber value="${booking.totalAmount}" type="currency" currencySymbol="₫"/>
+                                                    + DV: <fmt:formatNumber value="${serviceTotals[booking.bookingID]}" type="currency" currencySymbol="₫"/>)
+                                                </small>
+                                            </c:if>
                                         </div>
 
                                         <div class="d-grid gap-2">

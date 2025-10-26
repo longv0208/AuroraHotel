@@ -38,6 +38,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link ${pageContext.request.requestURI.contains('/booking') ? 'active' : ''}"
+                            href="${pageContext.request.contextPath}/booking?view=search">
+                            <i class="fas fa-calendar-check me-1"></i> Booking
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link ${pageContext.request.requestURI.contains('/service') ? 'active' : ''}"
                             href="${pageContext.request.contextPath}/service">
                             <i class="fas fa-concierge-bell me-1"></i> Services
@@ -111,7 +117,7 @@
                                             <i class="fas fa-user me-2"></i> Profile
                                         </a></li>
                                     <li><a class="dropdown-item"
-                                            href="${pageContext.request.contextPath}/booking/my-bookings">
+                                            href="${pageContext.request.contextPath}/booking?view=my-bookings">
                                             <i class="fas fa-list me-2"></i> My Bookings
                                         </a></li>
                                     <li><a class="dropdown-item" href="${pageContext.request.contextPath}/settings">
