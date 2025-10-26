@@ -139,8 +139,7 @@
                                                         </div>
                                                     </div>
                                                     <small class="text-muted">
-                                                        <fmt:formatDate value="${review.reviewDate}"
-                                                            pattern="dd/MM/yyyy HH:mm" />
+                                                        ${fn:replace(fn:substring(review.reviewDate.toString(), 0, 16), 'T', ' ')}
                                                     </small>
                                                 </div>
 
