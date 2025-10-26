@@ -73,6 +73,53 @@
                             </div>
                         </div>
 
+                        <!-- Additional Services Section -->
+                        <c:if test="${not empty availableServices}">
+                            <div class="mb-4">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-concierge-bell me-2"></i>
+                                    Dịch Vụ Bổ Sung (Tùy Chọn)
+                                </h6>
+                                <div class="row">
+                                    <c:forEach var="service" items="${availableServices}">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-body">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input service-checkbox"
+                                                               type="checkbox"
+                                                               name="selectedServices"
+                                                               value="${service.serviceID}"
+                                                               id="service_${service.serviceID}"
+                                                               data-price="${service.price}">
+                                                        <label class="form-check-label" for="service_${service.serviceID}">
+                                                            <strong>${service.serviceName}</strong>
+                                                            <br>
+                                                            <small class="text-muted">${service.category}</small>
+                                                            <br>
+                                                            <span class="text-primary">
+                                                                <fmt:formatNumber value="${service.price}" type="currency" currencySymbol="₫"/>
+                                                                / ${service.unit}
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="mt-2 quantity-input" id="quantity_container_${service.serviceID}" style="display: none;">
+                                                        <label class="form-label small">Số lượng:</label>
+                                                        <input type="number"
+                                                               name="quantity_${service.serviceID}"
+                                                               class="form-control form-control-sm service-quantity"
+                                                               min="1"
+                                                               value="1"
+                                                               data-service-id="${service.serviceID}">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </c:forEach>
+                                </div>
+                            </div>
+                        </c:if>
+
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-calendar-check me-2"></i>
@@ -132,5 +179,21 @@
         </div>
     </div>
 </main>
+
+<script>
+// Toggle quantity input when service checkbox is checked
+document.querySelectorAll('.service-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const serviceId = this.value;
+        const quantityContainer = document.getElementById('quantity_container_' + serviceId);
+
+        if (this.checked) {
+            quantityContainer.style.display = 'block';
+        } else {
+            quantityContainer.style.display = 'none';
+        }
+    });
+});
+</script>
 
 <jsp:include page="../common/footer.jsp"/>

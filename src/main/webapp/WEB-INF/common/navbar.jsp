@@ -63,6 +63,10 @@
                                         <i class="fas fa-door-open me-2"></i> Room Management
                                     </a></li>
                                 <li><a class="dropdown-item"
+                                        href="${pageContext.request.contextPath}/service?view=list">
+                                        <i class="fas fa-concierge-bell me-2"></i> Service Management
+                                    </a></li>
+                                <li><a class="dropdown-item"
                                         href="${pageContext.request.contextPath}/customer?view=list">
                                         <i class="fas fa-users me-2"></i> Customer Management
                                     </a></li>

@@ -16,6 +16,8 @@ public class Booking {
     private LocalDateTime bookingDate;
     private LocalDate checkInDate;
     private LocalDate checkOutDate;
+    private LocalDateTime actualCheckInDate;
+    private LocalDateTime actualCheckOutDate;
     private int numberOfGuests;
     private String status; // Chờ xác nhận, Đã xác nhận, Đã checkin, Đã checkout, Đã hủy
     private BigDecimal totalAmount;
@@ -126,6 +128,22 @@ public class Booking {
 
     public void setCheckOutDate(LocalDate checkOutDate) {
         this.checkOutDate = checkOutDate;
+    }
+
+    public LocalDateTime getActualCheckInDate() {
+        return actualCheckInDate;
+    }
+
+    public void setActualCheckInDate(LocalDateTime actualCheckInDate) {
+        this.actualCheckInDate = actualCheckInDate;
+    }
+
+    public LocalDateTime getActualCheckOutDate() {
+        return actualCheckOutDate;
+    }
+
+    public void setActualCheckOutDate(LocalDateTime actualCheckOutDate) {
+        this.actualCheckOutDate = actualCheckOutDate;
     }
 
     public int getNumberOfGuests() {

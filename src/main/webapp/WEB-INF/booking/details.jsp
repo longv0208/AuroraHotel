@@ -95,7 +95,7 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
                         <i class="fas fa-bed me-2"></i>
@@ -115,6 +115,58 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Booking Services -->
+            <c:if test="${not empty bookingServices}">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-concierge-bell me-2"></i>
+                            Dịch Vụ Bổ Sung
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Dịch vụ</th>
+                                        <th>Danh mục</th>
+                                        <th class="text-end">Đơn giá</th>
+                                        <th class="text-center">SL</th>
+                                        <th class="text-end">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <c:forEach var="bs" items="${bookingServices}">
+                                        <tr>
+                                            <td>${bs.service.serviceName}</td>
+                                            <td><small class="text-muted">${bs.service.category}</small></td>
+                                            <td class="text-end">
+                                                <fmt:formatNumber value="${bs.unitPrice}" type="currency" currencySymbol="₫"/>
+                                            </td>
+                                            <td class="text-center">${bs.quantity}</td>
+                                            <td class="text-end">
+                                                <fmt:formatNumber value="${bs.totalPrice}" type="currency" currencySymbol="₫"/>
+                                            </td>
+                                        </tr>
+                                    </c:forEach>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-active">
+                                        <td colspan="4" class="text-end"><strong>Tổng dịch vụ:</strong></td>
+                                        <td class="text-end">
+                                            <strong>
+                                                <fmt:formatNumber value="${servicesTotal}" type="currency" currencySymbol="₫"/>
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </c:if>
         </div>
 
         <div class="col-md-4">
@@ -169,6 +221,111 @@
             </c:if>
         </div>
     </div>
+
+    <!-- Booking History Timeline -->
+    <c:if test="${not empty bookingHistory}">
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Lịch Sử Thay Đổi
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <c:forEach var="history" items="${bookingHistory}">
+                                <div class="timeline-item mb-3">
+                                    <div class="row">
+                                        <div class="col-md-2 text-muted small">
+                                            <fmt:formatDate value="${history.changedDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                        </div>
+                                        <div class="col-md-10">
+                                            <div class="d-flex align-items-start">
+                                                <div class="timeline-icon me-3">
+                                                    <c:choose>
+                                                        <c:when test="${history.action == 'CREATE'}">
+                                                            <i class="fas fa-plus-circle text-success"></i>
+                                                        </c:when>
+                                                        <c:when test="${history.action == 'UPDATE'}">
+                                                            <i class="fas fa-edit text-primary"></i>
+                                                        </c:when>
+                                                        <c:when test="${history.action == 'CANCEL'}">
+                                                            <i class="fas fa-times-circle text-danger"></i>
+                                                        </c:when>
+                                                        <c:when test="${history.action == 'CHECKIN'}">
+                                                            <i class="fas fa-sign-in-alt text-success"></i>
+                                                        </c:when>
+                                                        <c:when test="${history.action == 'CHECKOUT'}">
+                                                            <i class="fas fa-sign-out-alt text-danger"></i>
+                                                        </c:when>
+                                                        <c:otherwise>
+                                                            <i class="fas fa-circle text-secondary"></i>
+                                                        </c:otherwise>
+                                                    </c:choose>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <strong>
+                                                        <c:choose>
+                                                            <c:when test="${history.action == 'CREATE'}">Tạo booking</c:when>
+                                                            <c:when test="${history.action == 'UPDATE'}">Cập nhật booking</c:when>
+                                                            <c:when test="${history.action == 'CANCEL'}">Hủy booking</c:when>
+                                                            <c:when test="${history.action == 'CHECKIN'}">Check-in</c:when>
+                                                            <c:when test="${history.action == 'CHECKOUT'}">Check-out</c:when>
+                                                            <c:otherwise>${history.action}</c:otherwise>
+                                                        </c:choose>
+                                                    </strong>
+                                                    <c:if test="${not empty history.fieldChanged}">
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            Trường: <strong>${history.fieldChanged}</strong>
+                                                        </small>
+                                                        <c:if test="${not empty history.oldValue}">
+                                                            <br>
+                                                            <small class="text-muted">
+                                                                Giá trị cũ: <span class="text-decoration-line-through">${history.oldValue}</span>
+                                                            </small>
+                                                        </c:if>
+                                                        <c:if test="${not empty history.newValue}">
+                                                            <br>
+                                                            <small class="text-muted">
+                                                                Giá trị mới: <strong class="text-primary">${history.newValue}</strong>
+                                                            </small>
+                                                        </c:if>
+                                                    </c:if>
+                                                    <c:if test="${not empty history.notes}">
+                                                        <br>
+                                                        <small class="text-muted fst-italic">${history.notes}</small>
+                                                    </c:if>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </c:if>
 </main>
+
+<style>
+.timeline-item {
+    padding-left: 20px;
+    border-left: 2px solid #dee2e6;
+    position: relative;
+}
+
+.timeline-item:last-child {
+    border-left: none;
+}
+
+.timeline-icon {
+    font-size: 1.2rem;
+}
+</style>
 
 <jsp:include page="../common/footer.jsp"/>

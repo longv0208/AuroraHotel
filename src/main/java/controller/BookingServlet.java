@@ -1,13 +1,19 @@
 package controller;
 
 import dao.BookingDAO;
+import dao.BookingHistoryDAO;
+import dao.BookingServiceDAO;
 import dao.CustomerDAO;
 import dao.RoomDAO;
 import dao.RoomTypeDAO;
+import dao.ServiceDAO;
 import model.Booking;
+import model.BookingHistory;
+import model.BookingService;
 import model.Customer;
 import model.Room;
 import model.RoomType;
+import model.Service;
 import model.User;
 
 import java.io.IOException;
@@ -272,7 +278,12 @@ public class BookingServlet extends HttpServlet {
             long numberOfNights = checkOutDate.toEpochDay() - checkInDate.toEpochDay();
             BigDecimal totalAmount = room.getRoomType().getBasePrice().multiply(BigDecimal.valueOf(numberOfNights));
 
+            // Load available services
+            ServiceDAO serviceDAO = new ServiceDAO();
+            List<Service> availableServices = serviceDAO.getAllActiveServices();
+
             request.setAttribute("room", room);
+            request.setAttribute("availableServices", availableServices);
             request.setAttribute("checkInDate", checkInDate);
             request.setAttribute("checkOutDate", checkOutDate);
             request.setAttribute("numberOfNights", numberOfNights);
@@ -359,7 +370,31 @@ public class BookingServlet extends HttpServlet {
                 Room room = roomDAO.getById(roomID);
                 room.setStatus("Đã đặt");
                 roomDAO.update(room);
-                
+
+                // Add selected services to booking
+                String[] selectedServices = request.getParameterValues("selectedServices");
+                if (selectedServices != null && selectedServices.length > 0) {
+                    BookingServiceDAO bookingServiceDAO = new BookingServiceDAO();
+                    ServiceDAO serviceDAO = new ServiceDAO();
+
+                    for (String serviceIdStr : selectedServices) {
+                        try {
+                            int serviceID = Integer.parseInt(serviceIdStr);
+                            String quantityStr = request.getParameter("quantity_" + serviceID);
+                            int quantity = (quantityStr != null && !quantityStr.isEmpty()) ?
+                                          Integer.parseInt(quantityStr) : 1;
+
+                            // Get service to get current price
+                            Service service = serviceDAO.getServiceById(serviceID);
+                            if (service != null && quantity > 0) {
+                                bookingServiceDAO.addServiceToBooking(bookingID, serviceID, quantity, service.getPrice());
+                            }
+                        } catch (NumberFormatException e) {
+                            System.err.println("Invalid service ID or quantity: " + e.getMessage());
+                        }
+                    }
+                }
+
                 response.sendRedirect(request.getContextPath() + "/booking?view=details&id=" + bookingID + "&success=1");
             } else {
                 request.setAttribute("errorMessage", "Không thể tạo booking");
@@ -397,7 +432,19 @@ public class BookingServlet extends HttpServlet {
                 return;
             }
 
+            // Load booking services
+            BookingServiceDAO bookingServiceDAO = new BookingServiceDAO();
+            List<BookingService> bookingServices = bookingServiceDAO.getServicesByBooking(bookingID);
+            BigDecimal servicesTotal = bookingServiceDAO.calculateServicesTotal(bookingID);
+
+            // Load booking history
+            BookingHistoryDAO bookingHistoryDAO = new BookingHistoryDAO();
+            List<BookingHistory> bookingHistory = bookingHistoryDAO.getHistoryByBooking(bookingID);
+
             request.setAttribute("booking", booking);
+            request.setAttribute("bookingServices", bookingServices);
+            request.setAttribute("servicesTotal", servicesTotal);
+            request.setAttribute("bookingHistory", bookingHistory);
             request.getRequestDispatcher("/WEB-INF/booking/details.jsp").forward(request, response);
 
         } catch (Exception e) {
