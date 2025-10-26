@@ -159,25 +159,25 @@
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 <c:if test="${booking.status == 'Chờ xác nhận'}">
-                                                    <a href="${pageContext.request.contextPath}/booking?action=confirm&id=${booking.bookingID}" 
-                                                       class="btn btn-outline-success btn-sm"
-                                                       onclick="return confirm('Xác nhận booking này?')">
+                                                    <button type="button"
+                                                            class="btn btn-outline-success btn-sm"
+                                                            onclick="showStatusModal('confirm', ${booking.bookingID}, '${booking.customer.fullName}', '${booking.room.roomNumber}')">
                                                         <i class="fas fa-check"></i>
-                                                    </a>
+                                                    </button>
                                                 </c:if>
                                                 <c:if test="${booking.status == 'Đã xác nhận'}">
-                                                    <a href="${pageContext.request.contextPath}/booking?action=checkin&id=${booking.bookingID}" 
-                                                       class="btn btn-outline-info btn-sm"
-                                                       onclick="return confirm('Check-in booking này?')">
+                                                    <button type="button"
+                                                            class="btn btn-outline-info btn-sm"
+                                                            onclick="showStatusModal('checkin', ${booking.bookingID}, '${booking.customer.fullName}', '${booking.room.roomNumber}')">
                                                         <i class="fas fa-sign-in-alt"></i>
-                                                    </a>
+                                                    </button>
                                                 </c:if>
                                                 <c:if test="${booking.status == 'Đã checkin'}">
-                                                    <a href="${pageContext.request.contextPath}/booking?action=checkout&id=${booking.bookingID}" 
-                                                       class="btn btn-outline-warning btn-sm"
-                                                       onclick="return confirm('Check-out booking này?')">
+                                                    <button type="button"
+                                                            class="btn btn-outline-warning btn-sm"
+                                                            onclick="showStatusModal('checkout', ${booking.bookingID}, '${booking.customer.fullName}', '${booking.room.roomNumber}')">
                                                         <i class="fas fa-sign-out-alt"></i>
-                                                    </a>
+                                                    </button>
                                                 </c:if>
                                             </div>
                                         </td>
@@ -191,5 +191,114 @@
         </c:otherwise>
     </c:choose>
 </main>
+
+<!-- Status Change Confirmation Modal -->
+<div class="modal fade" id="statusChangeModal" tabindex="-1" aria-labelledby="statusChangeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusChangeModalLabel">
+                    <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                    Xác Nhận Thay Đổi Trạng Thái
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage"></p>
+                <div class="alert alert-info mb-0">
+                    <strong>Thông tin booking:</strong><br>
+                    <i class="fas fa-user me-2"></i><span id="modalCustomer"></span><br>
+                    <i class="fas fa-door-open me-2"></i>Phòng: <span id="modalRoom"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <form id="statusChangeForm" method="post" action="${pageContext.request.contextPath}/booking" style="display: inline;">
+                    <input type="hidden" name="action" id="modalAction" value="">
+                    <input type="hidden" name="id" id="modalBookingId" value="">
+                    <button type="submit" class="btn btn-primary" id="modalConfirmBtn">
+                        <i class="fas fa-check me-2"></i>Xác Nhận
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let statusModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        statusModal = new bootstrap.Modal(document.getElementById('statusChangeModal'));
+    });
+
+    function showStatusModal(action, bookingId, customerName, roomNumber) {
+        console.log('showStatusModal called with:', { action, bookingId, customerName, roomNumber });
+
+        const messages = {
+            'confirm': {
+                title: 'Xác Nhận Booking',
+                message: 'Bạn có chắc chắn muốn xác nhận booking này?',
+                btnClass: 'btn-success',
+                btnText: '<i class="fas fa-check me-2"></i>Xác Nhận Booking'
+            },
+            'checkin': {
+                title: 'Check-in',
+                message: 'Bạn có chắc chắn muốn check-in booking này?',
+                btnClass: 'btn-info',
+                btnText: '<i class="fas fa-sign-in-alt me-2"></i>Check-in'
+            },
+            'checkout': {
+                title: 'Check-out',
+                message: 'Bạn có chắc chắn muốn check-out booking này?',
+                btnClass: 'btn-warning',
+                btnText: '<i class="fas fa-sign-out-alt me-2"></i>Check-out'
+            }
+        };
+
+        const config = messages[action];
+
+        // Update modal content
+        document.getElementById('statusChangeModalLabel').innerHTML =
+            '<i class="fas fa-exclamation-circle text-warning me-2"></i>' + config.title;
+        document.getElementById('modalMessage').textContent = config.message;
+        document.getElementById('modalCustomer').textContent = customerName;
+        document.getElementById('modalRoom').textContent = roomNumber;
+
+        // Update form
+        document.getElementById('modalAction').value = action;
+        document.getElementById('modalBookingId').value = bookingId;
+
+        console.log('Form values set:', {
+            action: document.getElementById('modalAction').value,
+            id: document.getElementById('modalBookingId').value
+        });
+
+        // Update button
+        const confirmBtn = document.getElementById('modalConfirmBtn');
+        confirmBtn.className = 'btn ' + config.btnClass;
+        confirmBtn.innerHTML = config.btnText;
+
+        // Show modal
+        statusModal.show();
+    }
+
+    // Add form submit listener to track submission
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('statusChangeForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                console.log('Form submitting with data:', {
+                    action: document.getElementById('modalAction').value,
+                    id: document.getElementById('modalBookingId').value,
+                    method: form.method,
+                    url: form.action
+                });
+            });
+        }
+    });
+</script>
 
 <jsp:include page="../common/footer.jsp"/>

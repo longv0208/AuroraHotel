@@ -38,27 +38,41 @@
                 .navbar {
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    padding: 0.75rem 1rem;
                 }
 
                 .navbar-brand {
                     font-size: 1.5rem;
                     font-weight: 700;
                     color: #fff !important;
+                    margin-right: 2rem;
+                }
+
+                .navbar-nav {
+                    gap: 0.25rem;
                 }
 
                 .nav-link {
                     color: rgba(255, 255, 255, 0.9) !important;
                     font-weight: 500;
-                    padding: 0.5rem 1rem;
+                    padding: 0.5rem 1rem !important;
+                    border-radius: 0.25rem;
+                    transition: all 0.2s ease;
                 }
 
                 .nav-link:hover {
                     color: #fff !important;
+                    background-color: rgba(255, 255, 255, 0.1);
                 }
 
                 .nav-link.active {
                     color: #fff !important;
                     font-weight: 600;
+                    background-color: rgba(255, 255, 255, 0.15);
+                }
+
+                .nav-link i {
+                    margin-right: 0.35rem;
                 }
 
                 /* Profile image */
@@ -78,7 +92,24 @@
                 /* Dropdown */
                 .dropdown-menu {
                     border: none;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    border-radius: 0.5rem;
+                    margin-top: 0.5rem;
+                }
+
+                .dropdown-item {
+                    padding: 0.5rem 1.25rem;
+                    transition: all 0.2s ease;
+                }
+
+                .dropdown-item:hover {
+                    background-color: #f8f9fa;
+                    padding-left: 1.5rem;
+                }
+
+                .dropdown-item i {
+                    width: 20px;
+                    text-align: center;
                 }
 
                 /* Cards - Simple shadow */

@@ -17,11 +17,20 @@
                                         <p class="text-muted">Đăng nhập vào hệ thống</p>
                                     </div>
 
-                                    <!-- Success Message (Logout) -->
+                                    <!-- Success Message (Logout or Registration) -->
                                     <c:if test="${param.logout == 'success'}">
                                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                                             <i class="fas fa-check-circle me-2"></i>
                                             Đăng xuất thành công!
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                                aria-label="Close"></button>
+                                        </div>
+                                    </c:if>
+
+                                    <c:if test="${not empty successMessage}">
+                                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                            <i class="fas fa-check-circle me-2"></i>
+                                            ${successMessage}
                                             <button type="button" class="btn-close" data-bs-dismiss="alert"
                                                 aria-label="Close"></button>
                                         </div>
@@ -80,18 +89,27 @@
                                     </form>
 
                                     <!-- Additional Links -->
-                                    <div class="text-center mt-4">
+                                    <div class="text-center mt-3">
+                                        <p class="mb-0">
+                                            Chưa có tài khoản?
+                                            <a href="${pageContext.request.contextPath}/register" class="text-decoration-none fw-bold">
+                                                Đăng ký ngay
+                                            </a>
+                                        </p>
+                                    </div>
+
+                                    <div class="text-center mt-3">
                                         <a href="${pageContext.request.contextPath}/home"
-                                            class="text-decoration-none">
+                                            class="text-decoration-none text-muted">
                                             <i class="fas fa-arrow-left me-1"></i> Quay lại trang chủ
                                         </a>
                                     </div>
 
-                                  
+
                                 </div>
                             </div>
 
-                          
+
                         </div>
                     </div>
                 </main>

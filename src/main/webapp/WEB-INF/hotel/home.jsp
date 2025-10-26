@@ -72,7 +72,7 @@
                                             class="fas fa-star text-warning"></i> 4.5/5</p>
                                     <p class="fw-bold text-danger mb-4">2.500K/đêm</p>
                                     <div class="d-flex justify-content-between">
-                                        <a href="#" class="btn btn-primary">Xem Chi Tiết</a>
+                                        <a href="${pageContext.request.contextPath}/room" class="btn btn-primary">Xem Chi Tiết</a>
                                         <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-outline-success">Đặt Phòng</a>
                                     </div>
                                 </div>
@@ -90,7 +90,7 @@
                                             class="fas fa-star text-warning"></i> 4.8/5</p>
                                     <p class="fw-bold text-danger mb-4">3.200K/đêm</p>
                                     <div class="d-flex justify-content-between">
-                                        <a href="#" class="btn btn-primary">Xem Chi Tiết</a>
+                                        <a href="${pageContext.request.contextPath}/room" class="btn btn-primary">Xem Chi Tiết</a>
                                         <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-outline-success">Đặt Phòng</a>
                                     </div>
                                 </div>
@@ -108,7 +108,7 @@
                                             class="fas fa-star text-warning"></i> 4.2/5</p>
                                     <p class="fw-bold text-danger mb-4">1.500K/đêm</p>
                                     <div class="d-flex justify-content-between">
-                                        <a href="#" class="btn btn-primary">Xem Chi Tiết</a>
+                                        <a href="${pageContext.request.contextPath}/room" class="btn btn-primary">Xem Chi Tiết</a>
                                         <a href="${pageContext.request.contextPath}/booking?view=search" class="btn btn-outline-success">Đặt Phòng</a>
                                     </div>
                                 </div>

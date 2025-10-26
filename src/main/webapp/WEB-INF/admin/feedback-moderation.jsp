@@ -56,7 +56,7 @@
                                     <i class="fas fa-clock"></i> Chờ Duyệt
                                 </h6>
                                 <small>
-                                    <fmt:formatDate value="${review.reviewDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                    ${review.reviewDate}
                                 </small>
                             </div>
                         </div>

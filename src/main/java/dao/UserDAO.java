@@ -115,16 +115,43 @@ public class UserDAO extends DBContext {
     }
     
     /**
-     * Create a new user
-     * 
-     * @param user User object with data (password should already be hashed)
-     * @return true if creation successful, false otherwise
+     * Get user by phone number
+     *
+     * @param phone Phone number to search for
+     * @return User object if found, null otherwise
      */
-    public boolean createUser(User user) {
+    public User getUserByPhone(String phone) {
+        String sql = "SELECT UserID, Username, PasswordHash, FullName, Email, Phone, " +
+                     "Role, IsActive, CreatedDate, LastLogin " +
+                     "FROM Users WHERE Phone = ?";
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            ps.setString(1, phone);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractUserFromResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting user by phone: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * Create a new user
+     *
+     * @param user User object with data (password should already be hashed)
+     * @return User ID if creation successful, -1 otherwise
+     */
+    public int createUser(User user) {
         String sql = "INSERT INTO Users (Username, PasswordHash, FullName, Email, Phone, Role, IsActive) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getUsername());
             ps.setString(2, user.getPasswordHash());
             ps.setString(3, user.getFullName());
@@ -132,15 +159,23 @@ public class UserDAO extends DBContext {
             ps.setString(5, user.getPhone());
             ps.setString(6, user.getRole());
             ps.setBoolean(7, user.isActive());
-            
+
             int rowsAffected = ps.executeUpdate();
-            return rowsAffected > 0;
-            
+
+            if (rowsAffected > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+
         } catch (SQLException e) {
             System.err.println("Error creating user: " + e.getMessage());
             e.printStackTrace();
-            return false;
         }
+
+        return -1;
     }
     
     /**

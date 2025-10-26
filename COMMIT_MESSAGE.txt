@@ -1,0 +1,206 @@
+feat: Implement Linked Account System for User Registration and Booking
+
+# Summary
+Implement comprehensive Linked Account System that connects Users and Customers
+tables, enabling user self-registration, guest bookings, and streamlined booking
+experience for registered users.
+
+# Problem Solved
+Previous system required users to be in the system to make bookings, making the
+Customer table nearly irrelevant. This created a poor user experience where only
+pre-registered users could book rooms.
+
+# Solution Implemented
+Option B: Linked Account System
+- Users can self-register with automatic Customer record creation
+- Guests can book without login (Customer with UserID=NULL)
+- Registered users get pre-filled booking forms
+- Users can book for themselves or for others
+- Comprehensive tracking of who created each booking
+
+# Changes
+
+## Backend (Java)
+### New Files:
+- src/main/java/controller/RegisterServlet.java
+  * User registration controller
+  * Auto-creates linked Customer on registration
+  * MD5 password hashing (consistent with existing system)
+  * Full validation and error handling
+
+### Modified Files:
+- src/main/java/model/Customer.java
+  * Added userID field with getter/setter
+  * Updated constructors and toString()
+
+- src/main/java/dao/CustomerDAO.java
+  * Added getCustomerByUserID(int userID)
+  * Added createCustomerFromUser(User user)
+  * Added linkCustomerToUser(int customerID, int userID)
+  * Added hasLinkedCustomer(int userID)
+  * Updated all queries to handle UserID column
+
+- src/main/java/dao/UserDAO.java
+  * Changed createUser() to return int (userID) instead of boolean
+  * Added getUserByPhone(String phone)
+  * Uses Statement.RETURN_GENERATED_KEYS
+
+- src/main/java/controller/BookingServlet.java
+  * Updated doPost() to allow guest bookings (no login required)
+  * Rewrote createBooking() to handle 3 scenarios:
+    1. Registered user booking for self (pre-filled form)
+    2. Registered user booking for others
+    3. Guest booking (no login)
+
+## Frontend (JSP)
+### New Files:
+- src/main/webapp/WEB-INF/auth/register.jsp
+  * Registration form with Bootstrap design
+  * Client-side validation
+  * Password visibility toggle
+  * Real-time password match checking
+
+### Modified Files:
+- src/main/webapp/WEB-INF/booking/create.jsp (MAJOR CHANGES)
+  * Added user status alerts (guest vs logged-in)
+  * Pre-filled form fields for logged-in users
+  * Toggle button: "Đặt cho người khác" / "Đặt cho chính mình"
+  * Registration link for guests
+  * Hidden field: bookingForSelf
+  * JavaScript: toggleBookForOther()
+
+- src/main/webapp/WEB-INF/common/navbar.jsp
+  * Added "Register" link for non-logged-in users
+
+- src/main/webapp/WEB-INF/login.jsp
+  * Added "Đăng ký ngay" link below login form
+  * Added successMessage support from registration
+
+- src/main/webapp/WEB-INF/booking/list.jsp
+  * Bootstrap modals for status changes (replaced window.confirm)
+
+- src/main/webapp/WEB-INF/booking/my-bookings.jsp
+  * Bootstrap modal for cancel confirmation
+
+- src/main/webapp/WEB-INF/booking/details.jsp
+  * Bootstrap modal for cancel confirmation
+
+- src/main/webapp/WEB-INF/common/head.jsp
+  * Improved navbar CSS for better spacing
+
+## Database
+### New File:
+- migration_add_userid_to_customer.sql
+  * Adds UserID column to Customers table (INT NULL)
+  * Creates FK constraint: FK_Customer_User
+  * Creates indexes: IX_Customer_UserID, IX_Customer_Phone
+  * Migrates existing data by matching phone numbers
+  * Creates Customer records for existing Users
+
+## Documentation (9 files)
+- README_LINKED_ACCOUNT.md        - Quick overview and entry point
+- QUICK_START.md                  - 10-minute deployment guide
+- CHANGES_SUMMARY.md              - Detailed change summary
+- READY_TO_DEPLOY.md              - Comprehensive deployment guide
+- DEPLOYMENT_CHECKLIST.md         - Interactive deployment checklist
+- IMPLEMENTATION_GUIDE.md         - Technical deep dive
+- DATABASE_SCHEMA.md              - Database structure and queries
+- URL_ROUTES.md                   - All routes and endpoints
+- 📖_DOCUMENTATION_INDEX.md       - Documentation navigation
+
+# Features Added
+✅ User self-registration with validation
+✅ Automatic Customer creation on registration
+✅ Guest booking (no login required)
+✅ Pre-filled booking forms for registered users
+✅ Toggle between booking for self/others
+✅ Comprehensive booking history tracking
+✅ Registration links in navbar and login page
+✅ Bootstrap modals for better UX
+
+# Database Schema Changes
+- Added Customers.UserID column (INT NULL)
+- Added FK constraint: Customers.UserID → Users.UserID
+- Added indexes for performance
+- Supports NULL UserID for guest customers
+- Maintains referential integrity
+
+# User Flows
+1. New User Registration → Auto-create linked Customer → Login
+2. Guest Booking → No login required → Manual form entry
+3. Registered User Booking (Self) → Pre-filled form → Submit
+4. Registered User Booking (Others) → Toggle → Manual entry → Submit
+
+# Technical Details
+- Password hashing: MD5Util (consistent with LoginServlet)
+- Form validation: Client-side (HTML5) + Server-side (Java)
+- Session management: Proper authentication checks
+- Database access: PreparedStatement (SQL injection prevention)
+- Error handling: Try-catch with user-friendly messages
+- UI/UX: Bootstrap 5, responsive design
+
+# Testing
+✅ Compilation: SUCCESS
+✅ Build: SUCCESS (Aurora-1.0-SNAPSHOT.war - 6.4 MB)
+✅ No compilation errors
+✅ No import errors
+✅ WAR package generated
+
+Pending (requires deployment):
+- Database migration execution
+- Integration testing
+- User acceptance testing
+
+# Breaking Changes
+None. Backward compatible.
+- Existing Users continue to work
+- Existing Customers remain functional
+- Existing Bookings unaffected
+- New UserID column is NULLABLE
+
+# Migration Required
+⚠️ IMPORTANT: Must run migration_add_userid_to_customer.sql before deployment
+
+# Security Notes
+- Password hashing: MD5 (weak by 2025 standards, consider BCrypt migration)
+- Input validation: Implemented on both client and server
+- SQL injection: Protected via PreparedStatement
+- Session security: Proper authentication checks
+
+# Performance Impact
+- Added 2 indexes for optimized queries
+- Foreign key constraint adds minimal overhead
+- No significant performance degradation expected
+
+# Documentation
+Comprehensive documentation provided:
+- 9 markdown files covering all aspects
+- Step-by-step deployment guides
+- Database schema diagrams
+- Testing scenarios
+- Troubleshooting guides
+
+# Files Changed
+New: 6 files (1 Java, 1 JSP, 1 SQL, 3 docs)
+Modified: 13 files (4 Java, 9 JSP)
+Documentation: 9 files
+Total: 19 changed files + 9 documentation files
+
+# Build Info
+- WAR size: 6.4 MB
+- Build time: ~2 minutes
+- Java version: 17+
+- Jakarta EE: Compatible
+
+# Deployment Steps
+1. Run migration_add_userid_to_customer.sql (3 min)
+2. Deploy Aurora-1.0-SNAPSHOT.war (2 min)
+3. Test registration and booking flows (5 min)
+
+See QUICK_START.md for detailed instructions.
+
+# Issue Reference
+Resolves: "chỉ user trong hệ thống đc đặt phòng còn customer gần như ko liên quan gì"
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>

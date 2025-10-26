@@ -18,11 +18,12 @@
                 Quay Lại
             </a>
             <c:if test="${booking.status == 'Chờ xác nhận'}">
-                <a href="${pageContext.request.contextPath}/booking?action=cancel&id=${booking.bookingID}" 
-                   class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn hủy booking này?')">
+                <button type="button"
+                        class="btn btn-danger"
+                        onclick="showCancelModal(${booking.bookingID}, '${booking.room.roomNumber}', '${booking.checkInDate}')">
                     <i class="fas fa-times me-2"></i>
                     Hủy Booking
-                </a>
+                </button>
             </c:if>
         </div>
     </div>
@@ -342,5 +343,62 @@
     font-size: 1.2rem;
 }
 </style>
+
+<!-- Cancel Booking Confirmation Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelBookingModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Xác Nhận Hủy Booking
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Bạn có chắc chắn muốn hủy booking này?</strong></p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Hành động này không thể hoàn tác!
+                </div>
+                <div class="alert alert-info mb-0">
+                    <strong>Thông tin booking:</strong><br>
+                    <i class="fas fa-door-open me-2"></i>Phòng: <span id="cancelModalRoom"></span><br>
+                    <i class="fas fa-calendar-check me-2"></i>Check-in: <span id="cancelModalDate"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-arrow-left me-2"></i>Quay Lại
+                </button>
+                <form id="cancelBookingForm" method="post" action="${pageContext.request.contextPath}/booking" style="display: inline;">
+                    <input type="hidden" name="action" value="cancel">
+                    <input type="hidden" name="id" id="cancelModalBookingId" value="">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times me-2"></i>Hủy Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let cancelModal;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        cancelModal = new bootstrap.Modal(document.getElementById('cancelBookingModal'));
+    });
+
+    function showCancelModal(bookingId, roomNumber, checkInDate) {
+        // Update modal content
+        document.getElementById('cancelModalRoom').textContent = roomNumber;
+        document.getElementById('cancelModalDate').textContent = checkInDate;
+        document.getElementById('cancelModalBookingId').value = bookingId;
+
+        // Show modal
+        cancelModal.show();
+    }
+</script>
 
 <jsp:include page="../common/footer.jsp"/>

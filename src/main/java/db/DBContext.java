@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class DBContext {
     private Connection conn;
-    private final String DB_URL = "jdbc:sqlserver://127.0.0.1:1433;databaseName=HotelManagementDB;encrypt=false";
+    private final String DB_URL = "jdbc:sqlserver://127.0.0.1:1433;databaseName=HotelManagementDB2;encrypt=false";
     private final String DB_USER = "sa";
     private final String DB_PWD = "123456";
 

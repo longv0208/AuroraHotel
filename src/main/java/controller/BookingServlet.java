@@ -104,17 +104,21 @@ public class BookingServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("loggedInUser") == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
         String action = request.getParameter("action");
 
         if (action == null) {
             response.sendRedirect(request.getContextPath() + "/booking?view=list");
             return;
+        }
+
+        // Allow "create" action without login (guest booking)
+        // All other actions require authentication
+        if (!"create".equals(action)) {
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("loggedInUser") == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
+            }
         }
 
         switch (action) {
@@ -342,9 +346,9 @@ public class BookingServlet extends HttpServlet {
      */
     private void createBooking(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        HttpSession session = request.getSession();
-        User loggedInUser = (User) session.getAttribute("loggedInUser");
+
+        HttpSession session = request.getSession(false);
+        User loggedInUser = (session != null) ? (User) session.getAttribute("loggedInUser") : null;
 
         try {
             // Get booking parameters
@@ -362,30 +366,64 @@ public class BookingServlet extends HttpServlet {
             String email = request.getParameter("email");
             String idCard = request.getParameter("idCard");
             String address = request.getParameter("address");
+            String bookingForSelf = request.getParameter("bookingForSelf");
 
-            // Check or create customer
+            // Determine customer handling based on login status and booking type
             CustomerDAO customerDAO = new CustomerDAO();
-            Customer customer = customerDAO.getCustomerByPhone(phone);
-            
+            Customer customer = null;
             int customerID;
-            if (customer == null) {
-                // Create new customer
-                customer = new Customer();
-                customer.setFullName(fullName);
-                customer.setPhone(phone);
-                customer.setEmail(email);
-                customer.setIdCard(idCard);
-                customer.setAddress(address);
-                customer.setNationality("Việt Nam");
-                
-                customerID = customerDAO.createCustomer(customer);
-                if (customerID == -1) {
-                    request.setAttribute("errorMessage", "Không thể tạo thông tin khách hàng");
-                    showCreateForm(request, response);
-                    return;
+
+            if (loggedInUser != null && "true".equals(bookingForSelf)) {
+                // User đã login và đặt cho chính mình
+                customer = customerDAO.getCustomerByUserID(loggedInUser.getUserID());
+
+                if (customer == null) {
+                    // Chưa có Customer record liên kết, tạo mới
+                    customer = new Customer();
+                    customer.setFullName(loggedInUser.getFullName());
+                    customer.setPhone(loggedInUser.getPhone());
+                    customer.setEmail(loggedInUser.getEmail());
+                    customer.setUserID(loggedInUser.getUserID());
+                    customerID = customerDAO.createCustomer(customer);
+                } else {
+                    customerID = customer.getCustomerID();
+                }
+
+                // Update customer info với thông tin mới nhập (CMND, địa chỉ, etc.)
+                if (customerID > 0) {
+                    customer.setCustomerID(customerID);
+                    if (idCard != null && !idCard.trim().isEmpty()) {
+                        customer.setIdCard(idCard.trim());
+                    }
+                    if (address != null && !address.trim().isEmpty()) {
+                        customer.setAddress(address.trim());
+                    }
+                    customerDAO.updateCustomer(customer);
                 }
             } else {
-                customerID = customer.getCustomerID();
+                // Guest booking hoặc user đặt cho người khác
+                customer = customerDAO.getCustomerByPhone(phone);
+
+                if (customer == null) {
+                    // Create new customer (không link với user)
+                    customer = new Customer();
+                    customer.setFullName(fullName);
+                    customer.setPhone(phone);
+                    customer.setEmail(email);
+                    customer.setIdCard(idCard);
+                    customer.setAddress(address);
+                    customer.setNationality("Việt Nam");
+                    customer.setUserID(0); // Guest customer
+
+                    customerID = customerDAO.createCustomer(customer);
+                    if (customerID == -1) {
+                        request.setAttribute("errorMessage", "Không thể tạo thông tin khách hàng");
+                        showCreateForm(request, response);
+                        return;
+                    }
+                } else {
+                    customerID = customer.getCustomerID();
+                }
             }
 
             // Process coupon if provided
@@ -413,7 +451,8 @@ public class BookingServlet extends HttpServlet {
             Booking booking = new Booking();
             booking.setCustomerID(customerID);
             booking.setRoomID(roomID);
-            booking.setUserID(loggedInUser.getUserID());
+            // UserID có thể null nếu là guest booking
+            booking.setUserID(loggedInUser != null ? loggedInUser.getUserID() : 0);
             booking.setCheckInDate(checkInDate);
             booking.setCheckOutDate(checkOutDate);
             booking.setNumberOfGuests(numberOfGuests);

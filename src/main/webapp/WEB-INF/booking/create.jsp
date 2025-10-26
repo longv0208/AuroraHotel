@@ -28,6 +28,34 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    <!-- User Status Alert -->
+                    <c:choose>
+                        <c:when test="${not empty sessionScope.loggedInUser}">
+                            <!-- Logged-in User -->
+                            <div class="alert alert-info alert-dismissible fade show" role="alert" id="userStatusAlert">
+                                <i class="fas fa-user-check me-2"></i>
+                                Đặt phòng cho: <strong>${sessionScope.loggedInUser.fullName}</strong>
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-3" onclick="toggleBookForOther()">
+                                    <i class="fas fa-user-plus me-1"></i>
+                                    <span id="toggleBtnText">Đặt cho người khác</span>
+                                </button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <!-- Guest User -->
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Bạn đang đặt phòng như khách.
+                                <a href="${pageContext.request.contextPath}/register" class="alert-link fw-bold">
+                                    Đăng ký tài khoản
+                                </a>
+                                để quản lý booking dễ hơn!
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+
                     <c:if test="${not empty errorMessage}">
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fas fa-exclamation-circle me-2"></i>${errorMessage}
@@ -43,30 +71,43 @@
                         <input type="hidden" name="numberOfGuests" value="${param.guests != null ? param.guests : 1}">
                         <input type="hidden" name="totalAmount" value="${totalAmount}">
 
+                        <!-- Hidden field to track if booking for self -->
+                        <c:choose>
+                            <c:when test="${not empty sessionScope.loggedInUser}">
+                                <input type="hidden" name="bookingForSelf" id="bookingForSelf" value="true">
+                            </c:when>
+                            <c:otherwise>
+                                <input type="hidden" name="bookingForSelf" value="false">
+                            </c:otherwise>
+                        </c:choose>
+
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Họ tên khách hàng <span class="text-danger">*</span></label>
-                                <input type="text" name="fullName" class="form-control" required
+                                <input type="text" name="fullName" id="fullName" class="form-control" required
                                        pattern="[a-zA-ZÀ-ỹ\s]+"
-                                       title="Vui lòng nhập tên hợp lệ (chỉ chữ cái)">
+                                       title="Vui lòng nhập tên hợp lệ (chỉ chữ cái)"
+                                       value="${sessionScope.loggedInUser.fullName}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
-                                <input type="tel" name="phone" class="form-control" required
+                                <input type="tel" name="phone" id="phone" class="form-control" required
                                        pattern="0[0-9]{9,10}"
-                                       title="Số điện thoại phải bắt đầu bằng 0 và có 10-11 số">
+                                       title="Số điện thoại phải bắt đầu bằng 0 và có 10-11 số"
+                                       value="${sessionScope.loggedInUser.phone}">
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control"
-                                       title="Vui lòng nhập email hợp lệ">
+                                <input type="email" name="email" id="email" class="form-control"
+                                       title="Vui lòng nhập email hợp lệ"
+                                       value="${sessionScope.loggedInUser.email}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">CMND/CCCD</label>
-                                <input type="text" name="idCard" class="form-control"
+                                <input type="text" name="idCard" id="idCard" class="form-control"
                                        pattern="[0-9]{9,12}"
                                        title="CMND/CCCD phải có 9-12 chữ số">
                             </div>
@@ -74,7 +115,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">Địa chỉ</label>
-                            <textarea name="address" class="form-control" rows="2"></textarea>
+                            <textarea name="address" id="address" class="form-control" rows="2"></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -330,6 +371,42 @@ function formatCurrency(amount) {
 document.getElementById('couponCodeInput').addEventListener('input', function() {
     this.value = this.value.toUpperCase();
 });
+
+// Toggle booking for self or for other
+function toggleBookForOther() {
+    const bookingForSelfInput = document.getElementById('bookingForSelf');
+    const toggleBtn = document.getElementById('toggleBtnText');
+    const fullNameInput = document.getElementById('fullName');
+    const phoneInput = document.getElementById('phone');
+    const emailInput = document.getElementById('email');
+
+    if (bookingForSelfInput.value === 'true') {
+        // Switch to booking for others
+        bookingForSelfInput.value = 'false';
+        toggleBtn.textContent = 'Đặt cho chính mình';
+
+        // Clear pre-filled values
+        fullNameInput.value = '';
+        phoneInput.value = '';
+        emailInput.value = '';
+
+        // Enable all fields
+        fullNameInput.removeAttribute('readonly');
+        phoneInput.removeAttribute('readonly');
+        emailInput.removeAttribute('readonly');
+    } else {
+        // Switch back to booking for self
+        bookingForSelfInput.value = 'true';
+        toggleBtn.textContent = 'Đặt cho người khác';
+
+        // Restore user info
+        <c:if test="${not empty sessionScope.loggedInUser}">
+        fullNameInput.value = '${sessionScope.loggedInUser.fullName}';
+        phoneInput.value = '${sessionScope.loggedInUser.phone}';
+        emailInput.value = '${sessionScope.loggedInUser.email}' || '';
+        </c:if>
+    }
+}
 </script>
 
 <jsp:include page="../common/footer.jsp"/>

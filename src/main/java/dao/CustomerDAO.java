@@ -28,12 +28,12 @@ public class CustomerDAO extends DBContext {
         int offset = (page - 1) * RECORDS_PER_PAGE;
 
         String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "       c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
                 "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "         c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes " +
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes " +
                 "ORDER BY c.CreatedDate DESC " +
                 "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
 
@@ -67,7 +67,7 @@ public class CustomerDAO extends DBContext {
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "         c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes " +
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes " +
                 "ORDER BY c.FullName";
 
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql);
@@ -97,7 +97,7 @@ public class CustomerDAO extends DBContext {
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.CustomerID = ? " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "         c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes";
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes";
 
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setInt(1, customerID);
@@ -127,7 +127,7 @@ public class CustomerDAO extends DBContext {
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.Phone = ? " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "         c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes";
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes";
 
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setString(1, phone);
@@ -157,7 +157,7 @@ public class CustomerDAO extends DBContext {
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.IDCard = ? " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "         c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes";
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes";
 
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
             ps.setString(1, idCard);
@@ -189,7 +189,7 @@ public class CustomerDAO extends DBContext {
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.FullName LIKE ? OR c.Phone LIKE ? OR c.IDCard LIKE ? " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
-                "         c.Address, c.DateOfBirth, c.Nationality, c.CreatedDate, c.Notes " +
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes " +
                 "ORDER BY c.FullName";
 
         String searchPattern = "%" + searchTerm + "%";
@@ -215,11 +215,70 @@ public class CustomerDAO extends DBContext {
 
     /**
      * Create a new customer
-     * 
+     *
      * @param customer Customer object with data
      * @return Customer ID if successful, -1 otherwise
      */
     public int createCustomer(Customer customer) {
+        // Try with UserID first (for databases that have the column)
+        String sqlWithUserID = "INSERT INTO Customers (FullName, IDCard, Phone, Email, Address, " +
+                "DateOfBirth, Nationality, UserID, Notes) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sqlWithUserID, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, customer.getFullName());
+            ps.setString(2, customer.getIdCard());
+            ps.setString(3, customer.getPhone());
+            ps.setString(4, customer.getEmail());
+            ps.setString(5, customer.getAddress());
+
+            if (customer.getDateOfBirth() != null) {
+                ps.setDate(6, Date.valueOf(customer.getDateOfBirth()));
+            } else {
+                ps.setNull(6, Types.DATE);
+            }
+
+            ps.setString(7, customer.getNationality());
+
+            // Set UserID (can be 0 for guest customers)
+            if (customer.getUserID() > 0) {
+                ps.setInt(8, customer.getUserID());
+            } else {
+                ps.setNull(8, Types.INTEGER);
+            }
+
+            ps.setString(9, customer.getNotes());
+
+            int rowsAffected = ps.executeUpdate();
+
+            if (rowsAffected > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            // If UserID column doesn't exist, try without it
+            if (e.getMessage() != null && e.getMessage().contains("UserID")) {
+                System.out.println("UserID column not found, attempting insert without UserID...");
+                return createCustomerWithoutUserID(customer);
+            } else {
+                System.err.println("Error creating customer: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Create customer without UserID column (fallback for older database schema)
+     *
+     * @param customer Customer object with data
+     * @return Customer ID if successful, -1 otherwise
+     */
+    private int createCustomerWithoutUserID(Customer customer) {
         String sql = "INSERT INTO Customers (FullName, IDCard, Phone, Email, Address, " +
                 "DateOfBirth, Nationality, Notes) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -250,7 +309,7 @@ public class CustomerDAO extends DBContext {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error creating customer: " + e.getMessage());
+            System.err.println("Error creating customer (without UserID): " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -259,13 +318,13 @@ public class CustomerDAO extends DBContext {
 
     /**
      * Update an existing customer
-     * 
+     *
      * @param customer Customer object with updated data
      * @return true if update successful, false otherwise
      */
     public boolean updateCustomer(Customer customer) {
         String sql = "UPDATE Customers SET FullName = ?, IDCard = ?, Phone = ?, Email = ?, " +
-                "Address = ?, DateOfBirth = ?, Nationality = ?, Notes = ? " +
+                "Address = ?, DateOfBirth = ?, Nationality = ?, UserID = ?, Notes = ? " +
                 "WHERE CustomerID = ?";
 
         try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
@@ -282,8 +341,16 @@ public class CustomerDAO extends DBContext {
             }
 
             ps.setString(7, customer.getNationality());
-            ps.setString(8, customer.getNotes());
-            ps.setInt(9, customer.getCustomerID());
+
+            // Update UserID
+            if (customer.getUserID() > 0) {
+                ps.setInt(8, customer.getUserID());
+            } else {
+                ps.setNull(8, Types.INTEGER);
+            }
+
+            ps.setString(9, customer.getNotes());
+            ps.setInt(10, customer.getCustomerID());
 
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
@@ -359,8 +426,120 @@ public class CustomerDAO extends DBContext {
     }
 
     /**
+     * Get customer by User ID (linked account)
+     *
+     * @param userID User ID
+     * @return Customer object if found, null otherwise
+     */
+    public Customer getCustomerByUserID(int userID) {
+        // Try with UserID column first
+        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+                "FROM Customers c " +
+                "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
+                "WHERE c.UserID = ? " +
+                "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes";
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, userID);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractCustomerFromResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            // If UserID column doesn't exist, return null (no linked customers)
+            if (e.getMessage() != null && e.getMessage().contains("UserID")) {
+                System.out.println("UserID column not found, returning null for getCustomerByUserID");
+                return null;
+            }
+            System.err.println("Error getting customer by UserID: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * Create customer from User account info
+     * Automatically links the customer to the user
+     *
+     * @param user User object
+     * @return Customer ID if successful, -1 otherwise
+     */
+    public int createCustomerFromUser(model.User user) {
+        Customer customer = new Customer();
+        customer.setFullName(user.getFullName());
+        customer.setPhone(user.getPhone());
+        customer.setEmail(user.getEmail());
+        customer.setUserID(user.getUserID());
+
+        return createCustomer(customer);
+    }
+
+    /**
+     * Link existing customer to a user account
+     *
+     * @param customerID Customer ID
+     * @param userID User ID
+     * @return true if link successful, false otherwise
+     */
+    public boolean linkCustomerToUser(int customerID, int userID) {
+        String sql = "UPDATE Customers SET UserID = ? WHERE CustomerID = ?";
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, userID);
+            ps.setInt(2, customerID);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            // If UserID column doesn't exist, return false (can't link)
+            if (e.getMessage() != null && e.getMessage().contains("UserID")) {
+                System.out.println("UserID column not found, cannot link customer to user");
+                return false;
+            }
+            System.err.println("Error linking customer to user: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Check if a user already has a linked customer
+     *
+     * @param userID User ID
+     * @return true if user has linked customer, false otherwise
+     */
+    public boolean hasLinkedCustomer(int userID) {
+        String sql = "SELECT COUNT(*) FROM Customers WHERE UserID = ?";
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, userID);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            // If UserID column doesn't exist, return false (no linked customers possible)
+            if (e.getMessage() != null && e.getMessage().contains("UserID")) {
+                System.out.println("UserID column not found, returning false for hasLinkedCustomer");
+                return false;
+            }
+            System.err.println("Error checking linked customer: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    /**
      * Extract Customer object from ResultSet
-     * 
+     *
      * @param rs ResultSet positioned at a customer record
      * @return Customer object
      * @throws SQLException if database access error occurs
@@ -380,6 +559,17 @@ public class CustomerDAO extends DBContext {
         }
 
         customer.setNationality(rs.getString("Nationality"));
+
+        // Get UserID (if column exists)
+        try {
+            int userID = rs.getInt("UserID");
+            if (!rs.wasNull()) {
+                customer.setUserID(userID);
+            }
+        } catch (SQLException e) {
+            // UserID column doesn't exist, skip it
+            // This is fine for older database schemas
+        }
 
         Timestamp createdDate = rs.getTimestamp("CreatedDate");
         if (createdDate != null) {

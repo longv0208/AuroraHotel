@@ -16,6 +16,7 @@ public class Customer {
     private String address;
     private LocalDate dateOfBirth;
     private String nationality;
+    private int userID; // Link to User account (nullable for guest customers)
     private LocalDateTime createdDate;
     private int totalBookings;
     private String notes;
@@ -25,9 +26,9 @@ public class Customer {
     }
 
     // Full constructor
-    public Customer(int customerID, String fullName, String idCard, String phone, 
-                    String email, String address, LocalDate dateOfBirth, String nationality, 
-                    LocalDateTime createdDate, int totalBookings, String notes) {
+    public Customer(int customerID, String fullName, String idCard, String phone,
+                    String email, String address, LocalDate dateOfBirth, String nationality,
+                    int userID, LocalDateTime createdDate, int totalBookings, String notes) {
         this.customerID = customerID;
         this.fullName = fullName;
         this.idCard = idCard;
@@ -36,6 +37,7 @@ public class Customer {
         this.address = address;
         this.dateOfBirth = dateOfBirth;
         this.nationality = nationality;
+        this.userID = userID;
         this.createdDate = createdDate;
         this.totalBookings = totalBookings;
         this.notes = notes;
@@ -120,6 +122,14 @@ public class Customer {
         this.nationality = nationality;
     }
 
+    public int getUserID() {
+        return userID;
+    }
+
+    public void setUserID(int userID) {
+        this.userID = userID;
+    }
+
     public LocalDateTime getCreatedDate() {
         return createdDate;
     }
@@ -155,6 +165,7 @@ public class Customer {
                 ", address='" + address + '\'' +
                 ", dateOfBirth=" + dateOfBirth +
                 ", nationality='" + nationality + '\'' +
+                ", userID=" + userID +
                 ", createdDate=" + createdDate +
                 ", totalBookings=" + totalBookings +
                 ", notes='" + notes + '\'' +
