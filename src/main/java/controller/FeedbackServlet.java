@@ -1,6 +1,8 @@
 package controller;
 
+import dao.BookingDAO;
 import dao.ReviewDAO;
+import model.Booking;
 import model.Review;
 import model.User;
 import java.io.IOException;
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Servlet for Feedback operations using Review table
@@ -68,6 +71,22 @@ public class FeedbackServlet extends HttpServlet {
             throws ServletException, IOException {
 
         try {
+            HttpSession session = request.getSession();
+            User loggedInUser = (User) session.getAttribute("loggedInUser");
+            
+            // Get available bookings for feedback (checked out and not yet reviewed)
+            List<Booking> availableBookings = null;
+            if (loggedInUser != null) {
+                BookingDAO bookingDAO = new BookingDAO();
+                List<Booking> userBookings = bookingDAO.getBookingsByUser(loggedInUser.getUserID());
+                
+                // Filter: only checked out bookings that haven't been reviewed
+                availableBookings = userBookings.stream()
+                    .filter(b -> "Đã checkout".equals(b.getStatus()))
+                    .filter(b -> !reviewDAO.hasReviewed(b.getBookingID(), b.getCustomerID()))
+                    .collect(Collectors.toList());
+            }
+
             int page = 1;
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isEmpty()) {
@@ -84,6 +103,7 @@ public class FeedbackServlet extends HttpServlet {
             int totalRows = reviewDAO.getTotalApprovedReviews();
             int totalPages = (int) Math.ceil((double) totalRows / 10);
 
+            request.setAttribute("availableBookings", availableBookings);
             request.setAttribute("approvedReviews", approvedReviews);
             request.setAttribute("currentPage", page);
             request.setAttribute("totalPages", totalPages);
@@ -109,17 +129,66 @@ public class FeedbackServlet extends HttpServlet {
 
             HttpSession session = request.getSession();
             User loggedInUser = (User) session.getAttribute("loggedInUser");
-            int customerID = 0;
-            if (loggedInUser != null) {
-                customerID = loggedInUser.getUserID();
+            
+            // Require login
+            if (loggedInUser == null) {
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
             }
 
+            String bookingIdStr = request.getParameter("bookingID");
             String comment = request.getParameter("comment");
             String ratingStr = request.getParameter("rating");
 
-            // Validation
+            // Validate booking ID
+            if (bookingIdStr == null || bookingIdStr.isEmpty()) {
+                request.setAttribute("error", "Vui lòng chọn booking để đánh giá");
+                showFeedbackPage(request, response);
+                return;
+            }
+
+            int bookingID;
+            try {
+                bookingID = Integer.parseInt(bookingIdStr);
+            } catch (NumberFormatException e) {
+                request.setAttribute("error", "Booking ID không hợp lệ");
+                showFeedbackPage(request, response);
+                return;
+            }
+
+            // Validate booking belongs to user and is checked out
+            BookingDAO bookingDAO = new BookingDAO();
+            Booking booking = bookingDAO.getBookingById(bookingID);
+            
+            if (booking == null) {
+                request.setAttribute("error", "Booking không tồn tại");
+                showFeedbackPage(request, response);
+                return;
+            }
+
+            if (booking.getUserID() != loggedInUser.getUserID()) {
+                request.setAttribute("error", "Bạn không có quyền đánh giá booking này");
+                showFeedbackPage(request, response);
+                return;
+            }
+
+            if (!"Đã checkout".equals(booking.getStatus())) {
+                request.setAttribute("error", "Chỉ có thể đánh giá các booking đã checkout");
+                showFeedbackPage(request, response);
+                return;
+            }
+
+            // Check if already reviewed
+            if (reviewDAO.hasReviewed(bookingID, booking.getCustomerID())) {
+                request.setAttribute("error", "Bạn đã đánh giá booking này rồi");
+                showFeedbackPage(request, response);
+                return;
+            }
+
+            // Validate comment
             if (comment == null || comment.trim().isEmpty()) {
                 request.setAttribute("error", "Vui lòng nhập nội dung đánh giá");
+                request.setAttribute("selectedBookingID", bookingID);
                 request.setAttribute("comment", comment);
                 request.setAttribute("rating", ratingStr);
                 showFeedbackPage(request, response);
@@ -128,6 +197,7 @@ public class FeedbackServlet extends HttpServlet {
 
             if (comment.trim().length() < 10) {
                 request.setAttribute("error", "Nội dung đánh giá phải có ít nhất 10 ký tự");
+                request.setAttribute("selectedBookingID", bookingID);
                 request.setAttribute("comment", comment);
                 request.setAttribute("rating", ratingStr);
                 showFeedbackPage(request, response);
@@ -136,6 +206,7 @@ public class FeedbackServlet extends HttpServlet {
 
             if (comment.trim().length() > 1000) {
                 request.setAttribute("error", "Nội dung đánh giá không được vượt quá 1000 ký tự");
+                request.setAttribute("selectedBookingID", bookingID);
                 request.setAttribute("comment", comment);
                 request.setAttribute("rating", ratingStr);
                 showFeedbackPage(request, response);
@@ -155,8 +226,8 @@ public class FeedbackServlet extends HttpServlet {
 
             // Create review
             Review review = new Review();
-            review.setBookingID(0); // No booking required for public feedback
-            review.setCustomerID(customerID); // 0 for guests
+            review.setBookingID(bookingID);
+            review.setCustomerID(booking.getCustomerID());
             review.setRating(rating);
             review.setComment(comment.trim());
             review.setApproved(false); // Requires admin approval
@@ -169,6 +240,7 @@ public class FeedbackServlet extends HttpServlet {
                 showFeedbackPage(request, response);
             } else {
                 request.setAttribute("error", "Không thể gửi đánh giá. Vui lòng thử lại.");
+                request.setAttribute("selectedBookingID", bookingID);
                 request.setAttribute("comment", comment);
                 request.setAttribute("rating", ratingStr);
                 showFeedbackPage(request, response);
