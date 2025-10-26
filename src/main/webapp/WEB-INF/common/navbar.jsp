@@ -90,7 +90,7 @@
                                 <li><a class="dropdown-item" href="${pageContext.request.contextPath}/coupon?view=list">
                                         <i class="fas fa-ticket-alt me-2"></i> Coupon Management
                                     </a></li>
-                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/report/revenue">
+                                <li><a class="dropdown-item" href="${pageContext.request.contextPath}/report">
                                         <i class="fas fa-chart-line me-2"></i> Reports
                                     </a></li>
                             </ul>
@@ -120,9 +120,9 @@
                                             href="${pageContext.request.contextPath}/booking?view=my-bookings">
                                             <i class="fas fa-list me-2"></i> My Bookings
                                         </a></li>
-                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/settings">
+<!--                                    <li><a class="dropdown-item" href="${pageContext.request.contextPath}/settings">
                                             <i class="fas fa-cog me-2"></i> Settings
-                                        </a></li>
+                                        </a></li>-->
                                     <li>
                                         <hr class="dropdown-divider">
                                     </li>

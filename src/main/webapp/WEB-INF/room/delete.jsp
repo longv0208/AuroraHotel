@@ -40,9 +40,13 @@
                                         </h5>
                                     </div>
                                     <div class="card-body">
-                                        <div class="alert alert-warning">
+                                        <div class="alert alert-info">
                                             <i class="fas fa-info-circle me-2"></i>
-                                            Bạn có chắc chắn muốn xóa phòng này? Hành động này không thể hoàn tác!
+                                            <strong>Lưu ý:</strong> Đây là thao tác xóa mềm. Phòng sẽ được đánh dấu là không hoạt động nhưng dữ liệu vẫn được lưu giữ trong hệ thống.
+                                        </div>
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Bạn có chắc chắn muốn xóa phòng này?
                                         </div>
 
                                         <!-- Room Details -->

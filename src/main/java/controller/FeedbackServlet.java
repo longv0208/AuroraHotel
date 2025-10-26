@@ -212,8 +212,8 @@ public class FeedbackServlet extends HttpServlet {
     private void approveFeedback(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String role = (String) request.getSession().getAttribute("role");
-        if (role == null || !role.equals("Admin")) {
+        User loggedInUser = (User) request.getSession().getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.getRole().equals("Admin")) {
             response.sendRedirect(request.getContextPath() + "/feedback");
             return;
         }
@@ -239,8 +239,8 @@ public class FeedbackServlet extends HttpServlet {
     private void replyFeedback(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String role = (String) request.getSession().getAttribute("role");
-        if (role == null || !role.equals("Admin")) {
+        User loggedInUser = (User) request.getSession().getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.getRole().equals("Admin")) {
             response.sendRedirect(request.getContextPath() + "/feedback");
             return;
         }
@@ -275,8 +275,8 @@ public class FeedbackServlet extends HttpServlet {
     private void deleteFeedback(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String role = (String) request.getSession().getAttribute("role");
-        if (role == null || !role.equals("Admin")) {
+        User loggedInUser = (User) request.getSession().getAttribute("loggedInUser");
+        if (loggedInUser == null || !loggedInUser.getRole().equals("Admin")) {
             response.sendRedirect(request.getContextPath() + "/feedback");
             return;
         }
