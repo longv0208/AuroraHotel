@@ -1,6 +1,6 @@
 <%-- Document : setting Created on : Oct 20, 2025, 10:35:53 AM Author : BA LIEM --%>
     <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-        <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+        <%@ taglib prefix="c" uri="jakarta.tags.core" %>
             <c:set var="pageTitle" value="Settings - Aurora Hotel" scope="request" />
             <%@include file="../common/head.jsp" %>
                 <%@include file="../common/navbar.jsp" %>
