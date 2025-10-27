@@ -154,8 +154,8 @@
                                         <td>#${booking.bookingID}</td>
                                         <td>${booking.customer.fullName}</td>
                                         <td>${booking.room.roomNumber}</td>
-                                        <td><fmt:formatDate value="${booking.checkInDate}" pattern="dd/MM/yyyy"/></td>
-                                        <td><fmt:formatDate value="${booking.checkOutDate}" pattern="dd/MM/yyyy"/></td>
+                                        <td>${booking.checkInDate}</td>
+                                        <td>${booking.checkOutDate}</td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${booking.status == 'Chờ xác nhận'}">

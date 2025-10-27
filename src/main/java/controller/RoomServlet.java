@@ -1,8 +1,10 @@
 package controller;
 
 import dao.RoomDAO;
+import dao.RoomImageDAO;
 import dao.RoomTypeDAO;
 import model.Room;
+import model.RoomImage;
 import model.RoomType;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
@@ -104,6 +106,13 @@ public class RoomServlet extends HttpServlet {
             RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
             List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
             
+            // Load primary images for each room
+            RoomImageDAO roomImageDAO = new RoomImageDAO();
+            for (Room room : rooms) {
+                RoomImage primaryImage = roomImageDAO.getPrimaryImageByRoomId(room.getRoomID());
+                room.setPrimaryImage(primaryImage);
+            }
+            
             // Set attributes
             request.setAttribute("rooms", rooms);
             request.setAttribute("roomTypes", roomTypes);
@@ -145,7 +154,12 @@ public class RoomServlet extends HttpServlet {
                 return;
             }
             
+            // Load room images
+            RoomImageDAO roomImageDAO = new RoomImageDAO();
+            List<RoomImage> roomImages = roomImageDAO.getByRoomId(roomId);
+            
             request.setAttribute("room", room);
+            request.setAttribute("roomImages", roomImages);
             request.getRequestDispatcher("/WEB-INF/hotel/room-detail.jsp").forward(request, response);
             
         } catch (NumberFormatException e) {

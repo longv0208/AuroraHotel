@@ -5,18 +5,26 @@
 package controller;
 
 import dao.RoomDAO;
+import dao.RoomImageDAO;
 import dao.RoomTypeDAO;
 import model.Room;
+import model.RoomImage;
 import model.RoomType;
 import model.User;
+import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import java.util.List;
 
 /**
@@ -29,6 +37,11 @@ import java.util.List;
  * @author Aurora Hotel Team
  */
 @WebServlet(name = "RoomManagementServlet", urlPatterns = { "/roomManagement" })
+@MultipartConfig(
+    maxFileSize = 10485760, // 10 MB
+    maxRequestSize = 10485760,
+    fileSizeThreshold = 524288 // 512 KB
+)
 public class RoomManagementServlet extends HttpServlet {
 
     
@@ -68,6 +81,13 @@ public class RoomManagementServlet extends HttpServlet {
 
                 int rowCount = dao.getTotalRows();
                 int totalPages = (int) Math.ceil((double) rowCount / 10);
+                
+                // Load primary images for each room
+                RoomImageDAO roomImageDAO = new RoomImageDAO();
+                for (Room room : list) {
+                    RoomImage primaryImage = roomImageDAO.getPrimaryImageByRoomId(room.getRoomID());
+                    room.setPrimaryImage(primaryImage);
+                }
 
                 request.setAttribute("rooms", list);
                 request.setAttribute("totalPages", totalPages);
@@ -91,8 +111,13 @@ public class RoomManagementServlet extends HttpServlet {
                 RoomTypeDAO roomTypeDAO = new RoomTypeDAO();
                 List<RoomType> roomTypes = roomTypeDAO.getAllRoomTypes();
 
+                // Load room images
+                RoomImageDAO roomImageDAO = new RoomImageDAO();
+                List<RoomImage> roomImages = roomImageDAO.getByRoomId(id);
+
                 request.setAttribute("room", room);
                 request.setAttribute("roomTypes", roomTypes);
+                request.setAttribute("roomImages", roomImages);
                 request.getRequestDispatcher("/WEB-INF/room/edit.jsp").forward(request, response);
 
             } else if (view.equals("delete")) {
@@ -134,6 +159,21 @@ public class RoomManagementServlet extends HttpServlet {
         }
 
         String action = request.getParameter("action");
+
+        if (action != null && action.equals("uploadImage")) {
+            handleUploadImage(request, response, loggedInUser);
+            return;
+        }
+        
+        if (action != null && action.equals("deleteImage")) {
+            handleDeleteImage(request, response);
+            return;
+        }
+        
+        if (action != null && action.equals("setPrimaryImage")) {
+            handleSetPrimaryImage(request, response);
+            return;
+        }
 
         if (action.equals("edit")) {
             // Edit action
@@ -251,6 +291,166 @@ public class RoomManagementServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/roomManagement?view=delete&id=" + id);
             }
         }
+    }
+
+    /**
+     * Handle upload image
+     */
+    private void handleUploadImage(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+        
+        try {
+            Part filePart = request.getPart("imageFile");
+            
+            if (filePart == null || filePart.getSize() == 0) {
+                response.sendRedirect(request.getContextPath() + "/roomManagement?view=edit&id=" + request.getParameter("roomID"));
+                return;
+            }
+            
+            String roomIdStr = request.getParameter("roomID");
+            String imageTitle = request.getParameter("imageTitle");
+            String isPrimaryStr = request.getParameter("isPrimary");
+            
+            if (roomIdStr == null) {
+                response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
+                return;
+            }
+            
+            int roomId = Integer.parseInt(roomIdStr);
+            String fileName = getFileName(filePart);
+            
+            // Save file to server
+            String uploadDir = getServletContext().getRealPath("/") + "assets/img/";
+            File uploadDirFile = new File(uploadDir);
+            if (!uploadDirFile.exists()) {
+                uploadDirFile.mkdirs();
+            }
+            
+            // Generate unique filename
+            String extension = "";
+            int i = fileName.lastIndexOf('.');
+            if (i > 0) {
+                extension = fileName.substring(i);
+            }
+            String uniqueFileName = "room_" + roomId + "_" + System.currentTimeMillis() + extension;
+            String filePath = uploadDir + uniqueFileName;
+            
+            try (InputStream fileContent = filePart.getInputStream()) {
+                Files.copy(fileContent, Paths.get(filePath), StandardCopyOption.REPLACE_EXISTING);
+            }
+            
+            // Save to database
+            RoomImage roomImage = new RoomImage();
+            roomImage.setRoomID(roomId);
+            roomImage.setImageURL(uniqueFileName);
+            roomImage.setImageTitle(imageTitle != null && !imageTitle.trim().isEmpty() ? imageTitle : "Phòng " + roomId);
+            roomImage.setPrimary("true".equals(isPrimaryStr));
+            roomImage.setDisplayOrder(0);
+            roomImage.setUploadedBy(user.getUserID());
+            roomImage.setActive(true);
+            
+            RoomImageDAO roomImageDAO = new RoomImageDAO();
+            if (roomImageDAO.create(roomImage)) {
+                request.setAttribute("success", "Upload ảnh thành công");
+            } else {
+                request.setAttribute("error", "Không thể upload ảnh");
+            }
+            
+            response.sendRedirect(request.getContextPath() + "/roomManagement?view=edit&id=" + roomId);
+            
+        } catch (Exception e) {
+            System.err.println("Error uploading image: " + e.getMessage());
+            e.printStackTrace();
+            request.setAttribute("error", "Lỗi upload ảnh: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
+        }
+    }
+    
+    /**
+     * Handle delete image
+     */
+    private void handleDeleteImage(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        try {
+            String imageIdStr = request.getParameter("imageID");
+            String roomIdStr = request.getParameter("roomID");
+            
+            if (imageIdStr == null) {
+                response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
+                return;
+            }
+            
+            int imageId = Integer.parseInt(imageIdStr);
+            int roomId = roomIdStr != null ? Integer.parseInt(roomIdStr) : 0;
+            
+            RoomImageDAO roomImageDAO = new RoomImageDAO();
+            
+            // Get image info before deleting to delete physical file
+            RoomImage image = roomImageDAO.getById(imageId);
+            if (image != null) {
+                // Delete physical file
+                String filePath = getServletContext().getRealPath("/") + "assets/img/" + image.getImageURL();
+                File file = new File(filePath);
+                if (file.exists()) {
+                    file.delete();
+                }
+                
+                // Delete from database
+                roomImageDAO.delete(imageId);
+            }
+            
+            response.sendRedirect(request.getContextPath() + "/roomManagement?view=edit&id=" + roomId);
+            
+        } catch (Exception e) {
+            System.err.println("Error deleting image: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
+        }
+    }
+    
+    /**
+     * Handle set primary image
+     */
+    private void handleSetPrimaryImage(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        try {
+            String imageIdStr = request.getParameter("imageID");
+            String roomIdStr = request.getParameter("roomID");
+            
+            if (imageIdStr == null || roomIdStr == null) {
+                response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
+                return;
+            }
+            
+            int imageId = Integer.parseInt(imageIdStr);
+            int roomId = Integer.parseInt(roomIdStr);
+            
+            RoomImageDAO roomImageDAO = new RoomImageDAO();
+            roomImageDAO.setPrimary(imageId, roomId);
+            
+            response.sendRedirect(request.getContextPath() + "/roomManagement?view=edit&id=" + roomId);
+            
+        } catch (Exception e) {
+            System.err.println("Error setting primary image: " + e.getMessage());
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/roomManagement?view=list");
+        }
+    }
+    
+    /**
+     * Extract filename from Part
+     */
+    private String getFileName(Part part) {
+        String contentDisp = part.getHeader("content-disposition");
+        String[] tokens = contentDisp.split(";");
+        for (String token : tokens) {
+            if (token.trim().startsWith("filename")) {
+                return token.substring(token.indexOf("=") + 2, token.length() - 1);
+            }
+        }
+        return "unknown";
     }
 
     /**

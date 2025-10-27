@@ -138,7 +138,16 @@
                     <c:forEach var="room" items="${rooms}">
                         <div class="room-card">
                             <div class="room-image">
-                                <i class="fas fa-hotel"></i>
+                                <c:if test="${not empty room.primaryImage}">
+                                    <img src="${pageContext.request.contextPath}/assets/img/${room.primaryImage.imageURL}" 
+                                         alt="Phòng ${room.roomNumber}" 
+                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                         onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <i class="fas fa-hotel" style="display: none;"></i>
+                                </c:if>
+                                <c:if test="${empty room.primaryImage}">
+                                    <i class="fas fa-hotel"></i>
+                                </c:if>
                             </div>
                             <div class="room-info">
                                 <div class="room-name">Phòng ${room.roomNumber}</div>

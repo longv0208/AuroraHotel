@@ -135,15 +135,15 @@
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <a href="${pageContext.request.contextPath}/customer?view=details&id=${customer.customerID}" 
-                                                   class="btn btn-outline-primary btn-sm">
+                                                   class="btn btn-outline-primary btn-sm" title="Xem chi tiết">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 <a href="${pageContext.request.contextPath}/customer?view=booking-history&id=${customer.customerID}" 
-                                                   class="btn btn-outline-info btn-sm">
+                                                   class="btn btn-outline-info btn-sm" title="Lịch sử đặt phòng">
                                                     <i class="fas fa-history"></i>
                                                 </a>
                                                 <a href="${pageContext.request.contextPath}/customer?view=edit&id=${customer.customerID}" 
-                                                   class="btn btn-outline-warning btn-sm">
+                                                   class="btn btn-outline-warning btn-sm" title="Sửa thông tin">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                             </div>

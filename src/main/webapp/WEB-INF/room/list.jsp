@@ -34,6 +34,7 @@
                                             <table class="table table-hover">
                                                 <thead class="table-light">
                                                     <tr>
+                                                        <th>Ảnh</th>
                                                         <th>ID</th>
                                                         <th>Số phòng</th>
                                                         <th>Loại phòng</th>
@@ -47,6 +48,25 @@
                                                 <tbody>
                                                     <c:forEach var="room" items="${rooms}">
                                                         <tr>
+                                                            <td style="width: 80px;">
+                                                                <c:if test="${not empty room.primaryImage}">
+                                                                    <img src="${pageContext.request.contextPath}/assets/img/${room.primaryImage.imageURL}" 
+                                                                         alt="${room.roomNumber}" 
+                                                                         class="img-thumbnail" 
+                                                                         style="width: 70px; height: 70px; object-fit: cover;"
+                                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                                    <div class="bg-light d-flex align-items-center justify-content-center" 
+                                                                         style="width: 70px; height: 70px; display: none;">
+                                                                        <i class="fas fa-image text-muted"></i>
+                                                                    </div>
+                                                                </c:if>
+                                                                <c:if test="${empty room.primaryImage}">
+                                                                    <div class="bg-light d-flex align-items-center justify-content-center" 
+                                                                         style="width: 70px; height: 70px;">
+                                                                        <i class="fas fa-image text-muted"></i>
+                                                                    </div>
+                                                                </c:if>
+                                                            </td>
                                                             <td>${room.roomID}</td>
                                                             <td><strong>${room.roomNumber}</strong></td>
                                                             <td>
@@ -109,7 +129,7 @@
 
                                                     <c:if test="${empty rooms}">
                                                         <tr>
-                                                            <td colspan="8" class="text-center text-muted py-4">
+                                                            <td colspan="9" class="text-center text-muted py-4">
                                                                 <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
                                                                 Không có phòng nào
                                                             </td>

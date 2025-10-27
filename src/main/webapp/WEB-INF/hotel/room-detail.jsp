@@ -88,9 +88,53 @@
                 <div class="room-detail-card">
                     <h1 class="mb-4">Phòng ${room.roomNumber}</h1>
 
-                    <div class="room-image-large">
-                        <i class="fas fa-hotel"></i>
-                    </div>
+                    <!-- Room Images Carousel -->
+                    <c:if test="${not empty roomImages}">
+                        <div id="roomImageCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                <c:forEach var="image" items="${roomImages}" varStatus="status">
+                                    <div class="carousel-item ${status.first ? 'active' : ''}">
+                                        <img src="${pageContext.request.contextPath}/assets/img/${image.imageURL}" 
+                                             class="d-block w-100 room-image-large" 
+                                             alt="${image.imageTitle}"
+                                             style="object-fit: cover; border-radius: 10px;"
+                                             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/img/img_logo.png';">
+                                    </div>
+                                </c:forEach>
+                            </div>
+                            <c:if test="${roomImages.size() > 1}">
+                                <button class="carousel-control-prev" type="button" data-bs-target="#roomImageCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#roomImageCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </c:if>
+                        </div>
+                        
+                        <!-- Thumbnail Images -->
+                        <c:if test="${roomImages.size() > 1}">
+                            <div class="row g-2 mb-4">
+                                <c:forEach var="image" items="${roomImages}" varStatus="status">
+                                    <div class="col-3">
+                                        <img src="${pageContext.request.contextPath}/assets/img/${image.imageURL}" 
+                                             class="img-thumbnail cursor-pointer ${status.first ? 'border-primary' : ''}" 
+                                             alt="${image.imageTitle}"
+                                             style="height: 80px; width: 100%; object-fit: cover;"
+                                             onclick="document.querySelectorAll('.carousel-item')[${status.index}].click()"
+                                             onerror="this.onerror=null; this.src='${pageContext.request.contextPath}/assets/img/img_logo.png';">
+                                    </div>
+                                </c:forEach>
+                            </div>
+                        </c:if>
+                    </c:if>
+                    <c:if test="${empty roomImages}">
+                        <div class="room-image-large">
+                            <i class="fas fa-hotel"></i>
+                        </div>
+                    </c:if>
 
                     <div class="room-info-grid">
                         <div class="info-item">

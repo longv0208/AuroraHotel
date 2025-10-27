@@ -68,11 +68,11 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Check-in dự kiến:</strong><br>
-                            <fmt:formatDate value="${booking.checkInDate}" pattern="dd/MM/yyyy"/>
+                            ${booking.checkInDate}
                         </div>
                         <div class="col-md-6">
                             <strong>Check-out dự kiến:</strong><br>
-                            <fmt:formatDate value="${booking.checkOutDate}" pattern="dd/MM/yyyy"/>
+                            ${booking.checkOutDate}
                         </div>
                     </div>
 

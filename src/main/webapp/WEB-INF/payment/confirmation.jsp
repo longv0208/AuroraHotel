@@ -116,12 +116,12 @@
                     
                     <div class="mb-2">
                         <strong>Check-in:</strong><br>
-                        <fmt:formatDate value="${payment.booking.checkInDate}" pattern="dd/MM/yyyy"/>
+                        ${payment.booking.checkInDate}
                     </div>
                     
                     <div class="mb-2">
                         <strong>Check-out:</strong><br>
-                        <fmt:formatDate value="${payment.booking.checkOutDate}" pattern="dd/MM/yyyy"/>
+                        ${payment.booking.checkOutDate}
                     </div>
                     
                     <div class="mb-0">

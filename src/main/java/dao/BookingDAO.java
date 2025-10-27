@@ -240,12 +240,13 @@ public class BookingDAO extends DBContext {
 
         String sql = "SELECT b.*, " +
                 "c.FullName as CustomerName, c.Phone, " +
-                "r.RoomNumber, rt.TypeName, " +
-                "u.Username, u.FullName as UserFullName " +
+                "r.RoomID, r.RoomNumber, r.RoomTypeID, r.Floor, r.Status as RoomStatus, " +
+                "rt.TypeName, rt.BasePrice, rt.MaxGuests, " +
+                "u.UserID, u.Username, u.FullName as UserFullName " +
                 "FROM Bookings b " +
                 "INNER JOIN Customers c ON b.CustomerID = c.CustomerID " +
-                "INNER JOIN Rooms r ON b.RoomID = r.RoomID " +
-                "INNER JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID " +
+                "LEFT JOIN Rooms r ON b.RoomID = r.RoomID " +
+                "LEFT JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID " +
                 "LEFT JOIN Users u ON b.UserID = u.UserID " +
                 "WHERE b.CustomerID = ? " +
                 "ORDER BY b.BookingDate DESC";

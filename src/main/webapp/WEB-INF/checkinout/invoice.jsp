@@ -54,11 +54,11 @@
                     <p class="mb-1"><strong>Loại phòng:</strong> ${booking.room.roomType.typeName}</p>
                     <p class="mb-1">
                         <strong>Check-in:</strong> 
-                        <fmt:formatDate value="${booking.actualCheckInDate}" pattern="dd/MM/yyyy HH:mm"/>
+                        ${booking.actualCheckInDate}
                     </p>
                     <p class="mb-1">
                         <strong>Check-out:</strong> 
-                        <fmt:formatDate value="${booking.actualCheckOutDate}" pattern="dd/MM/yyyy HH:mm"/>
+                        ${booking.actualCheckOutDate}
                     </p>
                 </div>
             </div>

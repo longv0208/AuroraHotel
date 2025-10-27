@@ -12,9 +12,9 @@
             <i class="fas fa-history text-primary me-2"></i>
             Lịch Sử Booking - ${customer.fullName}
         </h1>
-        <a href="${pageContext.request.contextPath}/customer?view=details&id=${customer.customerID}" class="btn btn-outline-secondary">
+        <a href="${pageContext.request.contextPath}/customer?view=list" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left me-2"></i>
-            Quay Lại
+            Quay Lại Danh Sách
         </a>
     </div>
 
@@ -57,7 +57,7 @@
                                                     </c:choose>
                                                 </h5>
                                                 <p class="text-muted small mb-0">
-                                                    Đặt ngày: <fmt:formatDate value="${booking.bookingDate}" pattern="dd/MM/yyyy HH:mm"/>
+                                                    Đặt ngày: ${booking.bookingDate}
                                                 </p>
                                             </div>
                                         </div>
@@ -79,12 +79,12 @@
                                             <div class="col-md-6">
                                                 <i class="fas fa-calendar-check text-info me-2"></i>
                                                 <strong>Check-in:</strong>
-                                                <fmt:formatDate value="${booking.checkInDate}" pattern="dd/MM/yyyy"/>
+                                                ${booking.checkInDate}
                                             </div>
                                             <div class="col-md-6">
                                                 <i class="fas fa-calendar-times text-danger me-2"></i>
                                                 <strong>Check-out:</strong>
-                                                <fmt:formatDate value="${booking.checkOutDate}" pattern="dd/MM/yyyy"/>
+                                                ${booking.checkOutDate}
                                             </div>
                                         </div>
                                     </div>
@@ -93,7 +93,7 @@
                                         <div class="text-center mb-3">
                                             <small class="text-muted">Tổng tiền</small>
                                             <h4 class="text-primary mb-0">
-                                                <fmt:formatNumber value="${booking.totalAmount}" type="currency" currencySymbol="₫"/>
+                                                ${booking.totalAmount} ₫
                                             </h4>
                                         </div>
 

@@ -63,7 +63,9 @@ public class CustomerDAO extends DBContext {
     public List<Customer> getAllCustomers() {
         List<Customer> customers = new ArrayList<>();
 
-        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+        String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
+                "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
@@ -92,7 +94,9 @@ public class CustomerDAO extends DBContext {
      * @return Customer object if found, null otherwise
      */
     public Customer getCustomerById(int customerID) {
-        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+        String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
+                "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.CustomerID = ? " +
@@ -122,7 +126,9 @@ public class CustomerDAO extends DBContext {
      * @return Customer object if found, null otherwise
      */
     public Customer getCustomerByPhone(String phone) {
-        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+        String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
+                "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.Phone = ? " +
@@ -152,7 +158,9 @@ public class CustomerDAO extends DBContext {
      * @return Customer object if found, null otherwise
      */
     public Customer getCustomerByIdCard(String idCard) {
-        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+        String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
+                "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.IDCard = ? " +
@@ -184,7 +192,9 @@ public class CustomerDAO extends DBContext {
     public List<Customer> searchCustomers(String searchTerm) {
         List<Customer> customers = new ArrayList<>();
 
-        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+        String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
+                "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.FullName LIKE ? OR c.Phone LIKE ? OR c.IDCard LIKE ? " +
@@ -448,7 +458,9 @@ public class CustomerDAO extends DBContext {
      */
     public Customer getCustomerByUserID(int userID) {
         // Try with UserID column first
-        String sql = "SELECT c.*, COUNT(b.BookingID) as TotalBookings " +
+        String sql = "SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, " +
+                "       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, " +
+                "       COUNT(b.BookingID) as TotalBookings " +
                 "FROM Customers c " +
                 "LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID " +
                 "WHERE c.UserID = ? " +

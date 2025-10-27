@@ -142,8 +142,145 @@
                                     </form>
                                 </div>
                             </div>
+
+                            <!-- Room Images Management Section -->
+                            <div class="card shadow mt-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-images me-2"></i> Quản lý ảnh phòng
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Upload Image Form -->
+                                    <form action="${pageContext.request.contextPath}/roomManagement" method="POST" 
+                                          enctype="multipart/form-data" class="mb-4">
+                                        <input type="hidden" name="action" value="uploadImage">
+                                        <input type="hidden" name="roomID" value="${room.roomID}">
+                                        
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label for="imageFile" class="form-label">
+                                                    <i class="fas fa-upload me-1"></i> Chọn ảnh
+                                                </label>
+                                                <input type="file" class="form-control" id="imageFile" name="imageFile" 
+                                                       accept="image/*" required>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="imageTitle" class="form-label">
+                                                    Tiêu đề ảnh
+                                                </label>
+                                                <input type="text" class="form-control" id="imageTitle" name="imageTitle" 
+                                                       placeholder="Ví dụ: Phòng ${room.roomNumber}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="isPrimary" class="form-label">Ảnh chính</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="isPrimary" 
+                                                           name="isPrimary" value="true">
+                                                    <label class="form-check-label" for="isPrimary">
+                                                        Đặt làm ảnh chính
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-end">
+                                                <button type="submit" class="btn btn-success w-100">
+                                                    <i class="fas fa-cloud-upload-alt me-1"></i> Upload
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+
+                                    <!-- Existing Images -->
+                                    <div class="border-top pt-3">
+                                        <h6 class="mb-3">Ảnh hiện có:</h6>
+                                        <div id="imagesContainer" class="row">
+                                            <c:forEach var="image" items="${roomImages}">
+                                                <div class="col-md-3 mb-3 image-item" data-image-id="${image.imageID}">
+                                                    <div class="card">
+                                                        <div class="position-relative">
+                                                            <img src="${pageContext.request.contextPath}/assets/img/${image.imageURL}" 
+                                                                 class="card-img-top" style="height: 150px; object-fit: cover;"
+                                                                 alt="${image.imageTitle}"
+                                                                 onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                            <div class="bg-light d-flex align-items-center justify-content-center" 
+                                                                 style="height: 150px; display: none;">
+                                                                <i class="fas fa-image text-muted"></i>
+                                                            </div>
+                                                            <span class="badge ${image.primary ? 'bg-success' : 'bg-secondary'} position-absolute top-0 start-0 m-2">
+                                                                ${image.primary ? 'Ảnh chính' : 'Ảnh phụ'}
+                                                            </span>
+                                                        </div>
+                                                        <div class="card-body p-2">
+                                                            <p class="card-text small mb-1">${image.imageTitle}</p>
+                                                            <div class="btn-group w-100" role="group">
+                                                                <button type="button" class="btn btn-sm btn-primary set-primary-btn"
+                                                                        data-image-id="${image.imageID}" 
+                                                                        data-room-id="${room.roomID}">
+                                                                    <i class="fas fa-star"></i>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-danger delete-image-btn"
+                                                                        data-image-id="${image.imageID}">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </c:forEach>
+                                            
+                                            <c:if test="${empty roomImages}">
+                                                <div class="col-12">
+                                                    <p class="text-muted text-center">
+                                                        <i class="fas fa-image me-2"></i>Chưa có ảnh nào được tải lên
+                                                    </p>
+                                                </div>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden form for deleting images -->
+                            <form id="deleteImageForm" action="${pageContext.request.contextPath}/roomManagement" 
+                                  method="POST" style="display: none;">
+                                <input type="hidden" name="action" value="deleteImage">
+                                <input type="hidden" name="imageID" id="deleteImageID">
+                                <input type="hidden" name="roomID" value="${room.roomID}">
+                            </form>
+
+                            <!-- Hidden form for setting primary image -->
+                            <form id="setPrimaryImageForm" action="${pageContext.request.contextPath}/roomManagement" 
+                                  method="POST" style="display: none;">
+                                <input type="hidden" name="action" value="setPrimaryImage">
+                                <input type="hidden" name="imageID" id="setPrimaryImageID">
+                                <input type="hidden" name="roomID" id="setPrimaryRoomID">
+                            </form>
                         </div>
                     </div>
                 </main>
+
+                <script>
+                    // Delete image handler
+                    document.querySelectorAll('.delete-image-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const imageID = this.getAttribute('data-image-id');
+                            if (confirm('Bạn có chắc chắn muốn xóa ảnh này?')) {
+                                document.getElementById('deleteImageID').value = imageID;
+                                document.getElementById('deleteImageForm').submit();
+                            }
+                        });
+                    });
+
+                    // Set primary image handler
+                    document.querySelectorAll('.set-primary-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const imageID = this.getAttribute('data-image-id');
+                            const roomID = this.getAttribute('data-room-id');
+                            document.getElementById('setPrimaryImageID').value = imageID;
+                            document.getElementById('setPrimaryRoomID').value = roomID;
+                            document.getElementById('setPrimaryImageForm').submit();
+                        });
+                    });
+                </script>
 
                 <%@include file="../common/footer.jsp" %>

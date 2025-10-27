@@ -207,6 +207,32 @@ public class RoomImageDAO extends DBContext {
     }
     
     /**
+     * Get primary image for a room (returns first primary or first image if no primary)
+     * 
+     * @param roomId Room ID
+     * @return RoomImage object if found, null otherwise
+     */
+    public RoomImage getPrimaryImageByRoomId(int roomId) {
+        String sql = "SELECT TOP 1 ImageID, RoomID, RoomTypeID, ImageURL, ImageTitle, Description, IsPrimary, DisplayOrder, UploadedBy, UploadedDate, IsActive " +
+                     "FROM RoomImages WHERE RoomID = ? AND IsActive = 1 ORDER BY IsPrimary DESC, DisplayOrder ASC";
+        
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql)) {
+            ps.setInt(1, roomId);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return extractRoomImageFromResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting primary image by room ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return null;
+    }
+    
+    /**
      * Extract RoomImage from ResultSet
      */
     private RoomImage extractRoomImageFromResultSet(ResultSet rs) throws SQLException {

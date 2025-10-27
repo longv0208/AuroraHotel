@@ -184,19 +184,27 @@ public class CustomerServlet extends HttpServlet {
             CustomerDAO customerDAO = new CustomerDAO();
             Customer customer = customerDAO.getCustomerById(customerID);
 
+            System.out.println("Looking for customer ID: " + customerID);
+            
             if (customer == null) {
-                request.setAttribute("errorMessage", "Không tìm thấy khách hàng");
-                response.sendRedirect(request.getContextPath() + "/customer?view=list");
+                System.err.println("Customer not found with ID: " + customerID);
+                request.setAttribute("errorMessage", "Không tìm thấy khách hàng với ID: " + customerID);
+                response.sendRedirect(request.getContextPath() + "/customer?view=list&error=notfound");
                 return;
             }
 
+            System.out.println("Found customer: " + customer.getFullName());
             request.setAttribute("customer", customer);
             request.getRequestDispatcher("/WEB-INF/customer/details.jsp").forward(request, response);
 
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid customer ID format: " + idStr);
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/customer?view=list&error=invalid");
         } catch (Exception e) {
             System.err.println("Error showing customer details: " + e.getMessage());
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/customer?view=list");
+            response.sendRedirect(request.getContextPath() + "/customer?view=list&error=system");
         }
     }
 

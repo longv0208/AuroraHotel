@@ -15,6 +15,7 @@ public class Room {
     
     // For joined queries
     private RoomType roomType;
+    private RoomImage primaryImage; // For displaying in list
 
     // No-arg constructor
     public Room() {
@@ -105,6 +106,14 @@ public class Room {
 
     public void setRoomType(RoomType roomType) {
         this.roomType = roomType;
+    }
+
+    public RoomImage getPrimaryImage() {
+        return primaryImage;
+    }
+
+    public void setPrimaryImage(RoomImage primaryImage) {
+        this.primaryImage = primaryImage;
     }
 
     @Override
