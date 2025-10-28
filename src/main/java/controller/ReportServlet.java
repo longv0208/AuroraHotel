@@ -193,7 +193,7 @@ public class ReportServlet extends HttpServlet {
         DBContext dbContext = new DBContext();
 
         try (Connection conn = dbContext.getConnection()) {
-            // Get monthly revenue data
+            // Summary for selected month
             String query = "SELECT " +
                     "COUNT(DISTINCT b.BookingID) as TotalBookings, " +
                     "ISNULL(SUM(p.Amount), 0) as TotalRevenue, " +
@@ -218,30 +218,106 @@ public class ReportServlet extends HttpServlet {
                 }
             }
 
-            // Get daily revenue for the month
-            String dailyQuery = "SELECT DAY(b.BookingDate) as Day, " +
-                    "COUNT(b.BookingID) as Bookings, " +
-                    "ISNULL(SUM(p.Amount), 0) as Revenue " +
-                    "FROM Bookings b " +
-                    "LEFT JOIN Payments p ON b.BookingID = p.BookingID AND p.Status = 'Thành công' " +
-                    "WHERE YEAR(b.BookingDate) = ? AND MONTH(b.BookingDate) = ? " +
-                    "AND b.Status NOT IN ('Đã hủy') " +
-                    "GROUP BY DAY(b.BookingDate) " +
-                    "ORDER BY DAY(b.BookingDate)";
+            // Monthly revenue for current year (simple totals)
+            String monthlyQuery = "SELECT MONTH(p.PaymentDate) AS Month, " +
+                    "ISNULL(SUM(p.Amount), 0) AS TotalRevenue, " +
+                    "COUNT(DISTINCT b.BookingID) AS TotalBookings " +
+                    "FROM Payments p " +
+                    "LEFT JOIN Bookings b ON b.BookingID = p.BookingID AND b.Status NOT IN ('Đã hủy') " +
+                    "WHERE p.Status = 'Thành công' AND YEAR(p.PaymentDate) = ? " +
+                    "GROUP BY MONTH(p.PaymentDate) " +
+                    "ORDER BY Month";
 
-            List<Map<String, Object>> dailyRevenue = new ArrayList<>();
-
-            try (PreparedStatement ps = conn.prepareStatement(dailyQuery)) {
+            List<Map<String, Object>> monthlyRevenue = new ArrayList<>();
+            try (PreparedStatement ps = conn.prepareStatement(monthlyQuery)) {
                 ps.setInt(1, year);
-                ps.setInt(2, month);
-
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        Map<String, Object> day = new HashMap<>();
-                        day.put("day", rs.getInt("Day"));
-                        day.put("bookings", rs.getInt("Bookings"));
-                        day.put("revenue", rs.getDouble("Revenue"));
-                        dailyRevenue.add(day);
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("month", rs.getInt("Month"));
+                        row.put("totalRevenue", rs.getDouble("TotalRevenue"));
+                        row.put("totalBookings", rs.getInt("TotalBookings"));
+                        // Profit equals revenue for now (no cost data)
+                        row.put("totalProfit", rs.getDouble("TotalRevenue"));
+                        monthlyRevenue.add(row);
+                    }
+                }
+            }
+
+            // Quarterly revenue for current year
+            String quarterlyQuery = "SELECT DATEPART(QUARTER, p.PaymentDate) AS Quarter, " +
+                    "ISNULL(SUM(p.Amount), 0) AS TotalRevenue, " +
+                    "COUNT(DISTINCT b.BookingID) AS TotalBookings " +
+                    "FROM Payments p " +
+                    "LEFT JOIN Bookings b ON b.BookingID = p.BookingID AND b.Status NOT IN ('Đã hủy') " +
+                    "WHERE p.Status = 'Thành công' AND YEAR(p.PaymentDate) = ? " +
+                    "GROUP BY DATEPART(QUARTER, p.PaymentDate) " +
+                    "ORDER BY Quarter";
+
+            List<Map<String, Object>> quarterlyRevenue = new ArrayList<>();
+            try (PreparedStatement ps = conn.prepareStatement(quarterlyQuery)) {
+                ps.setInt(1, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("quarter", rs.getInt("Quarter"));
+                        row.put("totalRevenue", rs.getDouble("TotalRevenue"));
+                        row.put("totalBookings", rs.getInt("TotalBookings"));
+                        row.put("totalProfit", rs.getDouble("TotalRevenue"));
+                        quarterlyRevenue.add(row);
+                    }
+                }
+            }
+
+            // Yearly revenue for last 3 years (including current)
+            String yearlyQuery = "SELECT YEAR(p.PaymentDate) AS Year, " +
+                    "ISNULL(SUM(p.Amount), 0) AS TotalRevenue, " +
+                    "COUNT(DISTINCT b.BookingID) AS TotalBookings " +
+                    "FROM Payments p " +
+                    "LEFT JOIN Bookings b ON b.BookingID = p.BookingID AND b.Status NOT IN ('Đã hủy') " +
+                    "WHERE p.Status = 'Thành công' AND YEAR(p.PaymentDate) BETWEEN ? AND ? " +
+                    "GROUP BY YEAR(p.PaymentDate) " +
+                    "ORDER BY Year";
+
+            List<Map<String, Object>> yearlyRevenue = new ArrayList<>();
+            try (PreparedStatement ps = conn.prepareStatement(yearlyQuery)) {
+                ps.setInt(1, year - 2);
+                ps.setInt(2, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("year", rs.getInt("Year"));
+                        row.put("totalRevenue", rs.getDouble("TotalRevenue"));
+                        row.put("totalBookings", rs.getInt("TotalBookings"));
+                        row.put("totalProfit", rs.getDouble("TotalRevenue"));
+                        yearlyRevenue.add(row);
+                    }
+                }
+            }
+
+            // Room booking stats: count bookings per room in selected month and current year
+            String roomStatsQuery = "SELECT r.RoomNumber, rt.TypeName, " +
+                    "SUM(CASE WHEN YEAR(b.BookingDate) = ? AND MONTH(b.BookingDate) = ? THEN 1 ELSE 0 END) AS MonthlyBookings, " +
+                    "SUM(CASE WHEN YEAR(b.BookingDate) = ? THEN 1 ELSE 0 END) AS YearlyBookings " +
+                    "FROM Rooms r " +
+                    "LEFT JOIN RoomTypes rt ON r.RoomTypeID = rt.RoomTypeID " +
+                    "LEFT JOIN Bookings b ON r.RoomID = b.RoomID AND b.Status NOT IN ('Đã hủy') " +
+                    "GROUP BY r.RoomNumber, rt.TypeName " +
+                    "ORDER BY r.RoomNumber";
+
+            List<Map<String, Object>> roomBookingStats = new ArrayList<>();
+            try (PreparedStatement ps = conn.prepareStatement(roomStatsQuery)) {
+                ps.setInt(1, year);
+                ps.setInt(2, month);
+                ps.setInt(3, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Map<String, Object> row = new HashMap<>();
+                        row.put("roomNumber", rs.getString("RoomNumber"));
+                        row.put("typeName", rs.getString("TypeName"));
+                        row.put("monthlyBookings", rs.getInt("MonthlyBookings"));
+                        row.put("yearlyBookings", rs.getInt("YearlyBookings"));
+                        roomBookingStats.add(row);
                     }
                 }
             }
@@ -249,7 +325,10 @@ public class ReportServlet extends HttpServlet {
             request.setAttribute("month", month);
             request.setAttribute("year", year);
             request.setAttribute("revenueData", revenueData);
-            request.setAttribute("dailyRevenue", dailyRevenue);
+            request.setAttribute("monthlyRevenue", monthlyRevenue);
+            request.setAttribute("quarterlyRevenue", quarterlyRevenue);
+            request.setAttribute("yearlyRevenue", yearlyRevenue);
+            request.setAttribute("roomBookingStats", roomBookingStats);
 
             request.getRequestDispatcher("/WEB-INF/report/revenue.jsp").forward(request, response);
 

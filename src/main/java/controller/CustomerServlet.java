@@ -154,16 +154,30 @@ public class CustomerServlet extends HttpServlet {
             }
         }
 
-        CustomerDAO customerDAO = new CustomerDAO();
-        List<Customer> customers = customerDAO.getCustomerList(page);
+        // Read filters
+        String search = request.getParameter("search");
+        String nationality = request.getParameter("nationality");
+        String sortBy = request.getParameter("sortBy");
+        if (sortBy == null || sortBy.isEmpty()) {
+            sortBy = "createdDate"; // default
+        }
 
-        int totalRows = customerDAO.getTotalRows();
+        CustomerDAO customerDAO = new CustomerDAO();
+
+        List<Customer> customers = customerDAO.getCustomerListFiltered(page, search, nationality, sortBy);
+
+        int totalRows = customerDAO.getTotalRowsFiltered(search, nationality);
         int totalPages = (int) Math.ceil((double) totalRows / 10);
 
         request.setAttribute("customers", customers);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalRows", totalRows);
+        // Echo filters back to the JSP
+        request.setAttribute("search", search);
+        request.setAttribute("nationality", nationality);
+        request.setAttribute("sortBy", sortBy);
+
         request.getRequestDispatcher("/WEB-INF/customer/list.jsp").forward(request, response);
     }
 

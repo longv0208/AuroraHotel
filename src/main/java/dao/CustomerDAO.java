@@ -56,6 +56,137 @@ public class CustomerDAO extends DBContext {
     }
 
     /**
+     * Get paginated, filtered and sortable list of customers.
+     *
+     * @param page Page number (1-based)
+     * @param search Search term for name/phone/email/idCard (nullable)
+     * @param nationality Exact nationality filter (nullable or empty for all)
+     * @param sortBy One of: fullName, createdDate, totalBookings
+     * @return List of Customer objects
+     */
+    public List<Customer> getCustomerListFiltered(int page, String search, String nationality, String sortBy) {
+        List<Customer> customers = new ArrayList<>();
+        int offset = (page - 1) * RECORDS_PER_PAGE;
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, ")
+           .append("       c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes, ")
+           .append("       COUNT(b.BookingID) as TotalBookings ")
+           .append("FROM Customers c ")
+           .append("LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID ");
+
+        List<String> conditions = new ArrayList<>();
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasNationality = nationality != null && !nationality.trim().isEmpty();
+
+        if (hasSearch) {
+            conditions.add("(c.FullName LIKE ? OR c.Phone LIKE ? OR c.Email LIKE ? OR c.IDCard LIKE ?)");
+        }
+        if (hasNationality) {
+            conditions.add("c.Nationality = ?");
+        }
+
+        if (!conditions.isEmpty()) {
+            sql.append("WHERE ").append(String.join(" AND ", conditions)).append(' ');
+        }
+
+        sql.append("GROUP BY c.CustomerID, c.FullName, c.IDCard, c.Phone, c.Email, ")
+           .append("         c.Address, c.DateOfBirth, c.Nationality, c.UserID, c.CreatedDate, c.Notes ");
+
+        sql.append(buildOrderByClause(sortBy)).append(' ')
+           .append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql.toString())) {
+            if (hasSearch) {
+                String pattern = "%" + search.trim() + "%";
+                // FullName, Phone, Email, IDCard
+                ps.setString(1, pattern);
+                ps.setString(2, pattern);
+                ps.setString(3, pattern);
+                ps.setString(4, pattern);
+            }
+            int nextIndex = hasSearch ? 5 : 1;
+            if (hasNationality) {
+                ps.setString(nextIndex, nationality.trim());
+                nextIndex++;
+            }
+            ps.setInt(nextIndex, offset);
+            ps.setInt(nextIndex + 1, RECORDS_PER_PAGE);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    customers.add(extractCustomerFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting filtered customer list: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return customers;
+    }
+
+    /**
+     * Get total number of customers for current filters.
+     */
+    public int getTotalRowsFiltered(String search, String nationality) {
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT COUNT(DISTINCT c.CustomerID) ")
+           .append("FROM Customers c ")
+           .append("LEFT JOIN Bookings b ON c.CustomerID = b.CustomerID ");
+
+        List<String> conditions = new ArrayList<>();
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasNationality = nationality != null && !nationality.trim().isEmpty();
+
+        if (hasSearch) {
+            conditions.add("(c.FullName LIKE ? OR c.Phone LIKE ? OR c.Email LIKE ? OR c.IDCard LIKE ?)");
+        }
+        if (hasNationality) {
+            conditions.add("c.Nationality = ?");
+        }
+        if (!conditions.isEmpty()) {
+            sql.append("WHERE ").append(String.join(" AND ", conditions));
+        }
+
+        try (PreparedStatement ps = this.getConnection().prepareStatement(sql.toString())) {
+            if (hasSearch) {
+                String pattern = "%" + search.trim() + "%";
+                ps.setString(1, pattern);
+                ps.setString(2, pattern);
+                ps.setString(3, pattern);
+                ps.setString(4, pattern);
+            }
+            int nextIndex = hasSearch ? 5 : 1;
+            if (hasNationality) {
+                ps.setString(nextIndex, nationality.trim());
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting filtered total rows: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    private String buildOrderByClause(String sortBy) {
+        if ("fullName".equalsIgnoreCase(sortBy)) {
+            return "ORDER BY c.FullName ASC";
+        }
+        if ("totalBookings".equalsIgnoreCase(sortBy)) {
+            return "ORDER BY TotalBookings DESC, c.FullName ASC";
+        }
+        // Default to createdDate
+        return "ORDER BY c.CreatedDate DESC";
+    }
+
+    /**
      * Get all customers (without pagination)
      * 
      * @return List of all Customer objects
